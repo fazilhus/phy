@@ -30,3 +30,8 @@ SET_TARGET_PROPERTIES(imgui PROPERTIES FOLDER "exts/imgui")
 TARGET_LINK_LIBRARIES(exts INTERFACE imgui)
 
 ADD_SUBDIRECTORY(glm)
+
+ADD_LIBRARY(stb_image STATIC stbi/include/stb_image.h stbi/include/stb_image_resize2.h stbi/include/stb_image_write.h stbi/stbi.c)
+SET_TARGET_PROPERTIES(stb_image PROPERTIES FOLDER "exts/stb")
+TARGET_INCLUDE_DIRECTORIES(exts INTERFACE stb/include)
+TARGET_LINK_LIBRARIES(exts INTERFACE stb_image)
