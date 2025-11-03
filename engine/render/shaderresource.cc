@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include "renderdevice.h"
+#include "core/filesystem.h"
 
 
 namespace Render {
@@ -41,7 +42,7 @@ namespace Render {
             while (std::getline(ss, line)) {
                 if (size_t pos = line.find(pragma) != std::string::npos) {
                     std::string include = line.substr(pos + pragma.size() + 1, pos + line.size() - pragma.size() - 4);
-                    std::ifstream includeFileStream(include);
+                    std::ifstream includeFileStream(fs::create_path_from_rel_s(include));
                     std::string content(
                         (std::istreambuf_iterator<char>(includeFileStream)), (std::istreambuf_iterator<char>())
                     );
@@ -135,7 +136,9 @@ namespace Render {
         Instance()->shaders.clear();
         Instance()->shaderTypes.clear();
 
-        for (size_t i = 0; i < paths.size(); i++) { LoadShader(types[i], paths[i].c_str()); }
+        for (size_t i = 0; i < paths.size(); i++) {
+            LoadShader(types[i], paths[i].c_str());
+        }
 
         std::vector<std::vector<ShaderResourceId>> progs = Instance()->programShaders;
 

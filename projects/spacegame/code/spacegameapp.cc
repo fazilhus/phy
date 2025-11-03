@@ -24,6 +24,8 @@
 #include "spaceship.h"
 #include "fx/gltf.h"
 
+#include "core/filesystem.h"
+
 using namespace Display;
 using namespace Render;
 
@@ -54,7 +56,7 @@ namespace Game {
     bool SpaceGameApp::Open() {
         App::Open();
         this->window = new Display::Window;
-        this->window->SetSize(1600, 900);
+        this->window->SetSize(1920, 1080);
 
         if (this->window->Open()) {
             // set clear color to gray
@@ -81,24 +83,22 @@ namespace Game {
         Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
         cam->projection = projection;
 
-        std::cout << ENV_ROOT;
-
         // load all resources
         ModelId models[6] = {
-            LoadModel("../../assets/space/Asteroid_1.glb"),
-            LoadModel("../../assets/space/Asteroid_2.glb"),
-            LoadModel("../../assets/space/Asteroid_3.glb"),
-            LoadModel("../../assets/space/Asteroid_4.glb"),
-            LoadModel("../../assets/space/Asteroid_5.glb"),
-            LoadModel("../../assets/space/Asteroid_6.glb")
+            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_1.glb")),
+            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_2.glb")),
+            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_3.glb")),
+            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_4.glb")),
+            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_5.glb")),
+            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_6.glb"))
         };
         Physics::ColliderMeshId colliderMeshes[6] = {
-            Physics::LoadColliderMesh("../../assets/space/Asteroid_1_physics.glb"),
-            Physics::LoadColliderMesh("../../assets/space/Asteroid_2_physics.glb"),
-            Physics::LoadColliderMesh("../../assets/space/Asteroid_3_physics.glb"),
-            Physics::LoadColliderMesh("../../assets/space/Asteroid_4_physics.glb"),
-            Physics::LoadColliderMesh("../../assets/space/Asteroid_5_physics.glb"),
-            Physics::LoadColliderMesh("../../assets/space/Asteroid_6_physics.glb")
+            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_1_physics.glb")),
+            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_2_physics.glb")),
+            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_3_physics.glb")),
+            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_4_physics.glb")),
+            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_5_physics.glb")),
+            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_6_physics.glb"))
         };
 
         std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
@@ -142,14 +142,14 @@ namespace Game {
         }
 
         // Setup skybox
-        std::vector<const char*> skybox
+        std::vector<std::string> skybox
         {
-            "../../assets/space/bg.png",
-            "../../assets/space/bg.png",
-            "../../assets/space/bg.png",
-            "../../assets/space/bg.png",
-            "../../assets/space/bg.png",
-            "../../assets/space/bg.png"
+            fs::create_path_from_rel_s("assets/space/bg.png"),
+            fs::create_path_from_rel_s("assets/space/bg.png"),
+            fs::create_path_from_rel_s("assets/space/bg.png"),
+            fs::create_path_from_rel_s("assets/space/bg.png"),
+            fs::create_path_from_rel_s("assets/space/bg.png"),
+            fs::create_path_from_rel_s("assets/space/bg.png")
         };
         TextureResourceId skyboxId = TextureResource::LoadCubemap("skybox", skybox, true);
         RenderDevice::SetSkybox(skyboxId);
@@ -176,11 +176,11 @@ namespace Game {
         }
 
         SpaceShip ship;
-        auto size = (uint32_t)std::filesystem::file_size(std::filesystem::path("../../assets/space/spaceship.glb").string());
+        auto size = (uint32_t)std::filesystem::file_size(fs::create_path_from_rel_s("assets/space/spaceship.glb"));
         auto quota = fx::gltf::ReadQuotas{};
         quota.MaxFileSize = size;
         quota.MaxBufferByteLength = size;
-        ship.model = LoadModel("../../assets/space/spaceship.glb", quota);
+        ship.model = LoadModel(fs::create_path_from_rel_s("assets/space/spaceship.glb"), quota);
 
         std::clock_t c_start = std::clock();
         double dt = 0.01667f;

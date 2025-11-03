@@ -26,8 +26,6 @@ SET(files_render_render
     grid.h
     grid.cc
     lightsources.h
-    physics.h
-    physics.cc
     resourceid.h
     particlesystem.cc
     particlesystem.h

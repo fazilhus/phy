@@ -68,52 +68,52 @@ namespace Render {
         // Shaders
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, "../../shd/vs_static.glsl"
+                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_static.glsl").c_str()
             );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, "../../shd/fs_static.glsl"
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_static.glsl").c_str()
             );
             staticGeometryProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, "../../shd/vs_static_shadow.glsl"
+                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_static_shadow.glsl").c_str()
             );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, "../../shd/fs_static_shadow.glsl"
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_static_shadow.glsl").c_str()
             );
             staticShadowProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, "../../shd/vs_skybox.glsl"
+                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_skybox.glsl").c_str()
             );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, "../../shd/fs_skybox.glsl"
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_skybox.glsl").c_str()
             );
             skyboxProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, "../../shd/vs_fullscreen.glsl"
+                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_fullscreen.glsl").c_str()
             );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, "../../shd/fs_directional_light.glsl"
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_directional_light.glsl").c_str()
             );
             directionalLightProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, "../../shd/vs_pointlight.glsl"
+                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_pointlight.glsl").c_str()
             );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, "../../shd/fs_pointlight.glsl"
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_pointlight.glsl").c_str()
             );
             pointlightProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto cs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::COMPUTESHADER, "../../shd/cs_lightculling.glsl"
+                Render::ShaderResource::ShaderType::COMPUTESHADER, fs::create_path_from_rel_s("shd/cs_lightculling.glsl").c_str()
             );
             lightCullingProgram = Render::ShaderResource::CompileShaderProgram({cs});
         }

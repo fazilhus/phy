@@ -26,6 +26,7 @@
 #include "gtx/transform.hpp"
 #include "gtc/quaternion.hpp"
 #include "core/debug.h"
+#include "core/filesystem.h"
 
 typedef size_t index_t;
 typedef unsigned int uint;

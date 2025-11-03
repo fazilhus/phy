@@ -343,7 +343,7 @@ namespace Render {
     /**
 */
     TextureResourceId TextureResource::LoadCubemap(
-        std::string const& name, std::vector<const char*> const& paths, bool sRGB = false
+        std::string const& name, std::vector<std::string> const& paths, bool sRGB = false
     ) {
         GLuint handle;
         glGenTextures(1, &handle);
@@ -351,7 +351,7 @@ namespace Render {
 
         int w, h, nrChannels;
         for (unsigned int i = 0; i < paths.size(); i++) {
-            unsigned char* data = stbi_load(paths[i], &w, &h, &nrChannels, 0);
+            unsigned char* data = stbi_load(paths[i].c_str(), &w, &h, &nrChannels, 0);
             assert(data);
 
             glTexImage2D(

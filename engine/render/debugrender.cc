@@ -124,19 +124,19 @@ namespace Debug {
 
     void SetupShaders() {
         Render::ShaderResourceId const vsDebug = Render::ShaderResource::LoadShader(
-            Render::ShaderResource::ShaderType::VERTEXSHADER, "../../shd/debug.vs"
+            Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/debug.vs").c_str()
         );
         Render::ShaderResourceId const psDebug = Render::ShaderResource::LoadShader(
-            Render::ShaderResource::ShaderType::FRAGMENTSHADER, "../../shd/debug.fs"
+            Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/debug.fs").c_str()
         );
         Render::ShaderProgramId const progDebug = Render::ShaderResource::CompileShaderProgram({vsDebug, psDebug});
         shaders[DebugShape::BOX] = Render::ShaderResource::GetProgramHandle(progDebug);
 
         Render::ShaderResourceId const vsLine = Render::ShaderResource::LoadShader(
-            Render::ShaderResource::ShaderType::VERTEXSHADER, "../../shd/debug_lines.vs"
+            Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/debug_lines.vs").c_str()
         );
         Render::ShaderResourceId const psLine = Render::ShaderResource::LoadShader(
-            Render::ShaderResource::ShaderType::FRAGMENTSHADER, "../../shd/debug_lines.fs"
+            Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/debug_lines.fs").c_str()
         );
         Render::ShaderProgramId const progLine = Render::ShaderResource::CompileShaderProgram({vsLine, psLine});
         shaders[DebugShape::LINE] = Render::ShaderResource::GetProgramHandle(progLine);

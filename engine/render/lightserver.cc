@@ -10,6 +10,7 @@
 #include "core/cvar.h"
 #include "core/idpool.h"
 #include "debugrender.h"
+#include "core/filesystem.h"
 #include "core/random.h"
 
 
@@ -60,7 +61,7 @@ namespace Render {
             globalLightDirection = glm::normalize(glm::vec3(-0.1f, -0.77735f, -0.27735f));
             globalLightColor = glm::vec3(1.0f, 0.8f, 0.8f) * 3.0f;
 
-            icoSphereModel = LoadModel("../../assets/system/icosphere.glb");
+            icoSphereModel = LoadModel(fs::create_path_from_rel_s("assets/system/icosphere.glb"));
 
             r_draw_light_spheres = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_light_spheres", "0");
             r_draw_light_sphere_id = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_light_sphere_id", "-1");
@@ -190,10 +191,10 @@ namespace Render {
                 glBindVertexArray(primitive.vao);
 
                 static Render::ShaderResourceId const vs = Render::ShaderResource::LoadShader(
-                    Render::ShaderResource::ShaderType::VERTEXSHADER, "../../shd/debug.vs"
+                    Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/debug.vs").c_str()
                 );
                 static Render::ShaderResourceId const fs = Render::ShaderResource::LoadShader(
-                    Render::ShaderResource::ShaderType::FRAGMENTSHADER, "../../shd/debug.fs"
+                    Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/debug.fs").c_str()
                 );
                 static ShaderProgramId debugProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
                 GLuint debugProgramHandle = ShaderResource::GetProgramHandle(debugProgram);

@@ -107,7 +107,7 @@ namespace Render {
             WrappingMode, bool sRGB
         );
 
-        static TextureResourceId LoadCubemap(std::string const& name, std::vector<const char*> const& paths, bool sRGB);
+        static TextureResourceId LoadCubemap(std::string const& name, std::vector<std::string> const& paths, bool sRGB);
 
         static ImageId AllocateImage(ImageCreateInfo info);
 
