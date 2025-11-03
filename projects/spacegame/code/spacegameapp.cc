@@ -176,7 +176,11 @@ namespace Game {
         }
 
         SpaceShip ship;
-        ship.model = LoadModel("../../assets/space/spaceship.glb");
+        auto size = (uint32_t)std::filesystem::file_size(std::filesystem::path("../../assets/space/spaceship.glb").string());
+        auto quota = fx::gltf::ReadQuotas{};
+        quota.MaxFileSize = size;
+        quota.MaxBufferByteLength = size;
+        ship.model = LoadModel("../../assets/space/spaceship.glb", quota);
 
         std::clock_t c_start = std::clock();
         double dt = 0.01667f;

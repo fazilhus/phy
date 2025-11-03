@@ -77,14 +77,14 @@ namespace Render {
     //------------------------------------------------------------------------------
     /**
 */
-    Model LoadGLTF(std::string const& uri) {
+    Model LoadGLTF(std::string const& uri, fx::gltf::ReadQuotas q) {
         fx::gltf::Document doc;
 
         try {
             if (uri.substr(uri.find_last_of(".") + 1) == "glb")
-                doc = fx::gltf::LoadFromBinary(uri, fx::gltf::ReadQuotas{.MaxFileSize = 2 * fx::gltf::detail::DefaultMaxMemoryAllocation, .MaxBufferByteLength = 2 * fx::gltf::detail::DefaultMaxMemoryAllocation});
+                doc = fx::gltf::LoadFromBinary(uri, q);
             else
-                doc = fx::gltf::LoadFromText(uri);
+                doc = fx::gltf::LoadFromText(uri, q);
         }
         catch (const std::exception& err) {
             printf(err.what());
@@ -332,7 +332,7 @@ namespace Render {
     //------------------------------------------------------------------------------
     /**
 */
-    ModelId LoadModel(std::string name) {
+    ModelId LoadModel(std::string name, fx::gltf::ReadQuotas q) {
         auto iter = modelRegistry.find(name);
         if (iter != modelRegistry.end()) {
             ModelId const mid = (*iter).second;
@@ -341,7 +341,7 @@ namespace Render {
         }
 
         if (std::filesystem::exists(name)) {
-            Model mdl = LoadGLTF(name);
+            Model mdl = LoadGLTF(name, q);
             mdl.refcount = 1;
             ModelId const mid = (ModelId)modelAllocator.size();
             modelAllocator.push_back(mdl);

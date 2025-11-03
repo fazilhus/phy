@@ -12,6 +12,7 @@
 #include "renderdevice.h"
 #include "resourceid.h"
 #include "textureresource.h"
+#include "fx/gltf.h"
 
 
 namespace Render {
@@ -78,7 +79,7 @@ namespace Render {
         uint refcount;
     };
 
-    ModelId LoadModel(std::string name);
+    ModelId LoadModel(std::string name, fx::gltf::ReadQuotas q = {});
 
     void UnloadModel(ModelId);
 
