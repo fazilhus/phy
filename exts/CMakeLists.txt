@@ -35,3 +35,8 @@ ADD_LIBRARY(stb_image STATIC stbi/include/stb_image.h stbi/include/stb_image_res
 SET_TARGET_PROPERTIES(stb_image PROPERTIES FOLDER "exts/stb")
 TARGET_INCLUDE_DIRECTORIES(exts INTERFACE stb/include)
 TARGET_LINK_LIBRARIES(exts INTERFACE stb_image)
+
+ADD_LIBRARY(nlohmann_json STATIC nlohmann_json/include/nlohmann/json.hpp nlohmann_json/json.cpp)
+SET_TARGET_PROPERTIES(nlohmann_json PROPERTIES FOLDER "exts/nlohmann_json")
+TARGET_INCLUDE_DIRECTORIES(exts INTERFACE nlohmann_json/include)
+TARGET_LINK_LIBRARIES(exts INTERFACE nlohmann_json)
