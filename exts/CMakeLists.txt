@@ -40,3 +40,10 @@ ADD_LIBRARY(nlohmann_json STATIC nlohmann_json/include/nlohmann/json.hpp nlohman
 SET_TARGET_PROPERTIES(nlohmann_json PROPERTIES FOLDER "exts/nlohmann_json")
 TARGET_INCLUDE_DIRECTORIES(exts INTERFACE nlohmann_json/include)
 TARGET_LINK_LIBRARIES(exts INTERFACE nlohmann_json)
+
+ADD_LIBRARY(fx_gltf STATIC fx_gltf/include/fx/gltf.h fx_gltf/gltf.cpp)
+TARGET_INCLUDE_DIRECTORIES(fx_gltf PRIVATE nlohmann_json/include)
+SET_TARGET_PROPERTIES(fx_gltf PROPERTIES FOLDER "exts/fx_gltf")
+TARGET_INCLUDE_DIRECTORIES(exts INTERFACE fx_gltf/include)
+TARGET_LINK_LIBRARIES(fx_gltf INTERFACE nlohmann_json)
+TARGET_LINK_LIBRARIES(exts INTERFACE fx_gltf)
