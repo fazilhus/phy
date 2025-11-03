@@ -30,10 +30,11 @@ SET_TARGET_PROPERTIES(imgui PROPERTIES FOLDER "exts/imgui")
 TARGET_LINK_LIBRARIES(exts INTERFACE imgui)
 
 ADD_SUBDIRECTORY(glm)
+TARGET_INCLUDE_DIRECTORIES(exts INTERFACE glm)
 
-ADD_LIBRARY(stb_image STATIC stbi/include/stb_image.h stbi/include/stb_image_resize2.h stbi/include/stb_image_write.h stbi/stbi.c)
+ADD_LIBRARY(stb_image STATIC stbi/include/stbi/stb_image.h stbi/include/stbi/stb_image_resize2.h stbi/include/stbi/stb_image_write.h stbi/stbi.c)
 SET_TARGET_PROPERTIES(stb_image PROPERTIES FOLDER "exts/stb")
-TARGET_INCLUDE_DIRECTORIES(exts INTERFACE stb/include)
+TARGET_INCLUDE_DIRECTORIES(exts INTERFACE stbi/include)
 TARGET_LINK_LIBRARIES(exts INTERFACE stb_image)
 
 ADD_LIBRARY(nlohmann_json STATIC nlohmann_json/include/nlohmann/json.hpp nlohmann_json/json.cpp)
