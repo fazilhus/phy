@@ -9,37 +9,36 @@
 #include "core/app.h"
 #include "render/window.h"
 
-namespace Example
-{
-class ImGuiExampleApp : public Core::App
-{
-public:
-	/// constructor
-	ImGuiExampleApp();
-	/// destructor
-	~ImGuiExampleApp();
 
-	/// open app
-	bool Open();
-	/// clone app
-	void Close();
-	/// run app
-	void Run();
-private:
+namespace Example {
+    class ImGuiExampleApp : public Core::App {
+    public:
+        /// constructor
+        ImGuiExampleApp();
+        /// destructor
+        ~ImGuiExampleApp();
 
-	/// compile shaders
-	void CompileShaders();
+        /// open app
+        bool Open();
+        /// clone app
+        void Close();
+        /// run app
+        void Run();
 
-	/// show some ui things
-	void RenderUI();
+    private:
+        /// compile shaders
+        void CompileShaders();
 
-	GLuint program;
-	GLuint vertexShader;
-	GLuint pixelShader;
-	GLuint triangle;
-	Display::Window* window;
-	GLchar *vsBuffer;
-	GLchar *fsBuffer;
-	std::string compilerLog;
-};
+        /// show some ui things
+        void RenderUI();
+
+        GLuint program;
+        GLuint vertexShader;
+        GLuint pixelShader;
+        GLuint triangle;
+        Display::Window* window;
+        GLchar* vsBuffer;
+        GLchar* fsBuffer;
+        std::string compilerLog;
+    };
 } // namespace Example

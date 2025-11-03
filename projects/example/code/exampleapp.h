@@ -9,28 +9,27 @@
 #include "core/app.h"
 #include "render/window.h"
 
-namespace Example
-{
-class ExampleApp : public Core::App
-{
-public:
-	/// constructor
-	ExampleApp();
-	/// destructor
-	~ExampleApp();
 
-	/// open app
-	bool Open();
-	/// close app
-	void Close();
-	/// run app
-	void Run();
-private:
+namespace Example {
+    class ExampleApp : public Core::App {
+    public:
+        /// constructor
+        ExampleApp();
+        /// destructor
+        ~ExampleApp();
 
-	GLuint program;
-	GLuint vertexShader;
-	GLuint pixelShader;
-	GLuint triangle;
-	Display::Window* window;
-};
+        /// open app
+        bool Open();
+        /// close app
+        void Close();
+        /// run app
+        void Run();
+
+    private:
+        GLuint program;
+        GLuint vertexShader;
+        GLuint pixelShader;
+        GLuint triangle;
+        Display::Window* window;
+    };
 } // namespace Example

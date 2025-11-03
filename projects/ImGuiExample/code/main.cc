@@ -5,16 +5,13 @@
 #include "config.h"
 #include "exampleapp.h"
 
-int
-main(int argc, const char** argv)
-{
-	Example::ImGuiExampleApp app;
-	if (app.Open())
-	{
-		app.Run();
-		app.Close();
-	}
-	app.Exit();
+int main(int argc, const char** argv) {
+    Example::ImGuiExampleApp app;
+    if (app.Open()) {
+        app.Run();
+        app.Close();
+    }
+    app.Exit();
 
-	return app.ExitCode();
+    return app.ExitCode();
 }

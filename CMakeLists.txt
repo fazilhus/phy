@@ -1,15 +1,8 @@
 #--------------------------------------------------------------------------
-# gscept laboration environment
+# phy
 #--------------------------------------------------------------------------
 CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
-cmake_policy(SET CMP0048 NEW) # set policy for older versions
-PROJECT(gscept_lab_env VERSION 1.0)
-
-OPTION(CI_MODE "Run in CI mode" OFF) # Disabled by default
-
-IF(CI_MODE)
-    ADD_DEFINITIONS(-DCI_TEST)
-ENDIF(CI_MODE)
+PROJECT(phy)
 
 MACRO(TARGET_PCH target path)
 IF(WIN32)
@@ -24,19 +17,30 @@ IF(WIN32)
 ENDIF()
 ENDMACRO(TARGET_PCH)
 
+if(MSVC)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++20")
+endif(MSVC)
+IF(CMAKE_COMPILER_IS_GNUCXX)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+ENDIF()
+IF(APPLE)
+	SET(CMAKE_CXX_FLAGS "-g -std=c++20 -stdlib=libc++")
+ENDIF()
+
 IF(MSVC)
     SET(OPENGL_LIBS opengl32.lib)
 ELSE()
-    SET(OPENGL_LIBS GL X11 Xxf86vm pthread Xrandr Xi Xinerama Xcursor)
+    SET(OPENGL_LIBS GL GLU X11 Xxf86vm pthread Xrandr Xi Xinerama Xcursor)
 ENDIF()
-
-SET(CMAKE_CXX_STANDARD 20)
 
 SET(GSCEPT_LAB_ENV_ROOT ${CMAKE_CURRENT_DIR})
 
 SET(GSCEPT_LAB_ENV_OUTPUT_ROOT ${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
+ADD_COMPILE_DEFINITIONS(ENV_ROOT ${GSCEPT_LAB_ENV_OUTPUT_ROOT})
+#SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 SET_PROPERTY(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS GLEW_STATIC)
 ADD_SUBDIRECTORY(exts)
 ADD_SUBDIRECTORY(engine)
 ADD_SUBDIRECTORY(projects)
+
