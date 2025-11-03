@@ -17,11 +17,7 @@
 #include "core/random.h"
 #include "render/input/inputserver.h"
 #include "core/cvar.h"
-#include "render/physics.h"
 #include <chrono>
-#include <iostream>
-
-#include "spaceship.h"
 #include "fx/gltf.h"
 
 #include "core/filesystem.h"
@@ -83,6 +79,10 @@ namespace Game {
         Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
         cam->projection = projection;
 
+        auto cam_pos = glm::vec3(0, 0, 0);
+        auto t = glm::mat4(1.0f);
+        cam->view = lookAt(cam_pos, cam_pos + glm::vec3(t[2]), glm::vec3(t[1]));
+
         // load all resources
         ModelId models[6] = {
             LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_1.glb")),
@@ -92,20 +92,12 @@ namespace Game {
             LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_5.glb")),
             LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_6.glb"))
         };
-        Physics::ColliderMeshId colliderMeshes[6] = {
-            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_1_physics.glb")),
-            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_2_physics.glb")),
-            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_3_physics.glb")),
-            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_4_physics.glb")),
-            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_5_physics.glb")),
-            Physics::LoadColliderMesh(fs::create_path_from_rel_s("assets/space/Asteroid_6_physics.glb"))
-        };
 
-        std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
+        std::vector<std::tuple<ModelId, glm::mat4>> asteroids;
 
         // Setup asteroids near
         for (int i = 0; i < 100; i++) {
-            std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
+            std::tuple<ModelId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
             std::get<0>(asteroid) = models[resourceIndex];
             float span = 20.0f;
@@ -117,14 +109,13 @@ namespace Game {
             glm::vec3 rotationAxis = normalize(translation);
             float rotation = translation.x;
             glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
-            std::get<1>(asteroid) = Physics::CreateCollider(colliderMeshes[resourceIndex], transform);
-            std::get<2>(asteroid) = transform;
+            std::get<1>(asteroid) = transform;
             asteroids.push_back(asteroid);
         }
 
         // Setup asteroids far
         for (int i = 0; i < 50; i++) {
-            std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
+            std::tuple<ModelId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
             std::get<0>(asteroid) = models[resourceIndex];
             float span = 80.0f;
@@ -136,8 +127,7 @@ namespace Game {
             glm::vec3 rotationAxis = normalize(translation);
             float rotation = translation.x;
             glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
-            std::get<1>(asteroid) = Physics::CreateCollider(colliderMeshes[resourceIndex], transform);
-            std::get<2>(asteroid) = transform;
+            std::get<1>(asteroid) = transform;
             asteroids.push_back(asteroid);
         }
 
@@ -175,13 +165,6 @@ namespace Game {
                 );
         }
 
-        SpaceShip ship;
-        auto size = (uint32_t)std::filesystem::file_size(fs::create_path_from_rel_s("assets/space/spaceship.glb"));
-        auto quota = fx::gltf::ReadQuotas{};
-        quota.MaxFileSize = size;
-        quota.MaxBufferByteLength = size;
-        ship.model = LoadModel(fs::create_path_from_rel_s("assets/space/spaceship.glb"), quota);
-
         std::clock_t c_start = std::clock();
         double dt = 0.01667f;
 
@@ -197,16 +180,11 @@ namespace Game {
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
-            ship.Update(dt);
-            ship.CheckCollisions();
-
             // Draw some debug text
             Debug::DrawDebugText("FOOBAR", glm::vec3(0), {1, 0, 0, 1});
 
             // Store all drawcalls in the render device
-            for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<2>(asteroid)); }
-
-            RenderDevice::Draw(ship.model, ship.transform);
+            for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<1>(asteroid)); }
 
             // Execute the entire rendering pipeline
             RenderDevice::Render(this->window, dt);
