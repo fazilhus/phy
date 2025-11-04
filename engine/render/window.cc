@@ -11,8 +11,6 @@
 
 
 namespace Display {
-
-
 #ifdef __WIN32__
 #define APICALLTYPE __stdcall
 #else
@@ -22,10 +20,11 @@ namespace Display {
     /**
     */
     static void GLAPIENTRY
+
     GLDebugCallback(
         GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
         const void* userParam
-        ) {
+    ) {
         std::string msg("[OPENGL DEBUG MESSAGE] ");
 
         // print error severity
@@ -81,7 +80,7 @@ namespace Display {
     /**
     */
     void Window::StaticKeyPressCallback(GLFWwindow* win, int32 key, int32 scancode, int32 action, int32 mods) {
-        Window* window = (Window*)glfwGetWindowUserPointer(win);
+        Window * window = (Window*)glfwGetWindowUserPointer(win);
         if (ImGui::IsAnyItemHovered()) { ImGui_ImplGlfw_KeyCallback(win, key, scancode, action, mods); }
         else if (nullptr != window->keyPressCallback)
             window->keyPressCallback(key, scancode, action, mods);
@@ -93,7 +92,7 @@ namespace Display {
     /**
     */
     void Window::StaticMousePressCallback(GLFWwindow* win, int32 button, int32 action, int32 mods) {
-        Window* window = (Window*)glfwGetWindowUserPointer(win);
+        Window * window = (Window*)glfwGetWindowUserPointer(win);
 
         ImGui_ImplGlfw_MouseButtonCallback(win, button, action, mods);
 
@@ -107,7 +106,7 @@ namespace Display {
     /**
     */
     void Window::StaticMouseMoveCallback(GLFWwindow* win, float64 x, float64 y) {
-        Window* window = (Window*)glfwGetWindowUserPointer(win);
+        Window * window = (Window*)glfwGetWindowUserPointer(win);
         if (nullptr != window->mouseMoveCallback)
             window->mouseMoveCallback(x, y);
         Input::InputHandler::HandleMouseMoveEvent(x, y);
@@ -117,7 +116,7 @@ namespace Display {
     /**
     */
     void Window::StaticMouseEnterLeaveCallback(GLFWwindow* win, int32 mode) {
-        Window* window = (Window*)glfwGetWindowUserPointer(win);
+        Window * window = (Window*)glfwGetWindowUserPointer(win);
         if (nullptr != window->mouseLeaveEnterCallback)
             window->mouseLeaveEnterCallback(mode == 0);
     }
@@ -126,18 +125,17 @@ namespace Display {
     /**
     */
     void Window::StaticMouseScrollCallback(GLFWwindow* win, float64 x, float64 y) {
-        Window* window = (Window*)glfwGetWindowUserPointer(win);
+        Window * window = (Window*)glfwGetWindowUserPointer(win);
         if (ImGui::IsAnyItemHovered()) { ImGui_ImplGlfw_ScrollCallback(win, x, y); }
-        else
-            if (nullptr != window->mouseScrollCallback)
-                window->mouseScrollCallback(x, y);
+        else if (nullptr != window->mouseScrollCallback)
+            window->mouseScrollCallback(x, y);
     }
 
     //------------------------------------------------------------------------------
     /**
     */
     void Window::StaticWindowResizeCallback(GLFWwindow* win, int32 x, int32 y) {
-        Window* window = (Window*)glfwGetWindowUserPointer(win);
+        Window * window = (Window*)glfwGetWindowUserPointer(win);
         window->width = x;
         window->height = y;
         window->Resize();
@@ -353,5 +351,4 @@ namespace Display {
     /**
     */
     void Window::GetMousePos(float64& x, float64& y) { glfwGetCursorPos(this->window, &x, &y); }
-
 } // namespace Display

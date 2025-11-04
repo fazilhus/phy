@@ -3,8 +3,8 @@
 #include <filesystem>
 #include <iostream>
 
-namespace fs {
 
+namespace fs {
     static std::filesystem::path project_root = std::filesystem::current_path().parent_path().parent_path();
 
     static std::filesystem::path create_path_from_rel(const std::string& filepath) {
@@ -15,5 +15,4 @@ namespace fs {
     static std::string create_path_from_rel_s(const std::string& filepath) {
         return create_path_from_rel(filepath).string();
     }
-
 } // namespace fs

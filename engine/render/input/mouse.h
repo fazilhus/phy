@@ -8,6 +8,8 @@
 */
 //------------------------------------------------------------------------------
 #include "config.h"
+
+
 namespace Input {
     struct Mouse {
         enum Button {

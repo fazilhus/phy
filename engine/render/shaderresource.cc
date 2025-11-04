@@ -136,9 +136,7 @@ namespace Render {
         Instance()->shaders.clear();
         Instance()->shaderTypes.clear();
 
-        for (size_t i = 0; i < paths.size(); i++) {
-            LoadShader(types[i], paths[i].c_str());
-        }
+        for (size_t i = 0; i < paths.size(); i++) { LoadShader(types[i], paths[i].c_str()); }
 
         std::vector<std::vector<ShaderResourceId>> progs = Instance()->programShaders;
 

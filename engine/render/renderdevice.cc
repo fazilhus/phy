@@ -68,53 +68,64 @@ namespace Render {
         // Shaders
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_static.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::VERTEXSHADER,
+                fs::create_path_from_rel_s("shd/vs_static.glsl").c_str()
+                );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_static.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER,
+                fs::create_path_from_rel_s("shd/fs_static.glsl").c_str()
+                );
             staticGeometryProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_static_shadow.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::VERTEXSHADER,
+                fs::create_path_from_rel_s("shd/vs_static_shadow.glsl").c_str()
+                );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_static_shadow.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER,
+                fs::create_path_from_rel_s("shd/fs_static_shadow.glsl").c_str()
+                );
             staticShadowProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_skybox.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::VERTEXSHADER,
+                fs::create_path_from_rel_s("shd/vs_skybox.glsl").c_str()
+                );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_skybox.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER,
+                fs::create_path_from_rel_s("shd/fs_skybox.glsl").c_str()
+                );
             skyboxProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_fullscreen.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::VERTEXSHADER,
+                fs::create_path_from_rel_s("shd/vs_fullscreen.glsl").c_str()
+                );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_directional_light.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER,
+                fs::create_path_from_rel_s("shd/fs_directional_light.glsl").c_str()
+                );
             directionalLightProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto vs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_pointlight.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::VERTEXSHADER,
+                fs::create_path_from_rel_s("shd/vs_pointlight.glsl").c_str()
+                );
             auto fs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_pointlight.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::FRAGMENTSHADER,
+                fs::create_path_from_rel_s("shd/fs_pointlight.glsl").c_str()
+                );
             pointlightProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
         }
         {
             auto cs = Render::ShaderResource::LoadShader(
-                Render::ShaderResource::ShaderType::COMPUTESHADER, fs::create_path_from_rel_s("shd/cs_lightculling.glsl").c_str()
-            );
+                Render::ShaderResource::ShaderType::COMPUTESHADER,
+                fs::create_path_from_rel_s("shd/cs_lightculling.glsl").c_str()
+                );
             lightCullingProgram = Render::ShaderResource::CompileShaderProgram({cs});
         }
         GLint dims[4] = {0};
@@ -194,7 +205,7 @@ namespace Render {
             shadowCamTarget + shadowCamOffset,
             shadowCamTarget,
             glm::vec3(0.0f, 1.0f, 0.0f)
-        );
+            );
 
         CameraManager::UpdateCamera(shadowCamera);
 
@@ -202,7 +213,7 @@ namespace Render {
         glUseProgram(programHandle);
         glUniformMatrix4fv(
             glGetUniformLocation(programHandle, "ViewProjection"), 1, false, &shadowCamera->viewProjection[0][0]
-        );
+            );
 
         GLuint baseColorFactorLocation = glGetUniformLocation(programHandle, "BaseColorFactor");
         GLuint modelLocation = glGetUniformLocation(programHandle, "Model");
@@ -221,8 +232,8 @@ namespace Render {
                     glBindTexture(
                         GL_TEXTURE_2D, Render::TextureResource::GetTextureHandle(
                             primitive.material.textures[Model::Material::TEXTURE_BASECOLOR]
-                        )
-                    );
+                            )
+                        );
                     glUniform1i(Model::Material::TEXTURE_BASECOLOR, Model::Material::TEXTURE_BASECOLOR);
 
                     glUniform4fv(baseColorFactorLocation, 1, &primitive.material.baseColorFactor[0]);
@@ -235,7 +246,7 @@ namespace Render {
                     glBindVertexArray(primitive.vao);
                     glDrawElements(
                         GL_TRIANGLES, primitive.numIndices, primitive.indexType, (void*)(intptr_t)primitive.offset
-                    );
+                        );
                 }
             }
         }
@@ -263,7 +274,7 @@ namespace Render {
         glUniformMatrix4fv(
             glGetUniformLocation(staticOpaquePrepassProgramHandle, "ViewProjection"), 1, false,
             &mainCamera->viewProjection[0][0]
-        );
+            );
 
         GLuint baseColorFactorLocation = glGetUniformLocation(staticOpaquePrepassProgramHandle, "BaseColorFactor");
         GLuint modelLocation = glGetUniformLocation(staticOpaquePrepassProgramHandle, "Model");
@@ -282,8 +293,8 @@ namespace Render {
                     glBindTexture(
                         GL_TEXTURE_2D, Render::TextureResource::GetTextureHandle(
                             primitive.material.textures[Model::Material::TEXTURE_BASECOLOR]
-                        )
-                    );
+                            )
+                        );
                     glUniform1i(Model::Material::TEXTURE_BASECOLOR, Model::Material::TEXTURE_BASECOLOR);
                     glUniform4fv(baseColorFactorLocation, 1, &primitive.material.baseColorFactor[0]);
 
@@ -295,7 +306,7 @@ namespace Render {
                     glBindVertexArray(primitive.vao);
                     glDrawElements(
                         GL_TRIANGLES, primitive.numIndices, primitive.indexType, (void*)(intptr_t)primitive.offset
-                    );
+                        );
                 }
             }
         }
@@ -314,11 +325,11 @@ namespace Render {
         glUniformMatrix4fv(glGetUniformLocation(lightCullingProgramHandle, "View"), 1, false, &mainCamera->view[0][0]);
         glUniformMatrix4fv(
             glGetUniformLocation(lightCullingProgramHandle, "Projection"), 1, false, &mainCamera->projection[0][0]
-        );
+            );
         glUniformMatrix4fv(
             glGetUniformLocation(lightCullingProgramHandle, "ViewProjection"), 1, false,
             &mainCamera->viewProjection[0][0]
-        );
+            );
 
         // Bind depth map texture to texture location 20 (which will not be used by any model texture)
         glActiveTexture(GL_TEXTURE30);
@@ -327,19 +338,19 @@ namespace Render {
 
         glUniform1i(
             glGetUniformLocation(lightCullingProgramHandle, "NumPointLights"), LightServer::GetNumPointLights()
-        );
+            );
 
         // Bind shader storage buffer objects for the light and index buffers
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, LightServer::GetBuffer(LightServer::PointLightBuffer::POSITIONS));
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, LightServer::GetBuffer(LightServer::PointLightBuffer::RADII));
         glBindBufferBase(
             GL_SHADER_STORAGE_BUFFER, 3, LightServer::GetBuffer(LightServer::PointLightBuffer::VISIBLE_INDICES)
-        );
+            );
 
         glUniform2ui(
             glGetUniformLocation(lightCullingProgramHandle, "NumTiles"), LightServer::GetWorkGroupsX(),
             LightServer::GetWorkGroupsY()
-        );
+            );
 
         glDispatchCompute(LightServer::GetWorkGroupsX(), LightServer::GetWorkGroupsY(), 1);
 
@@ -369,15 +380,15 @@ namespace Render {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, LightServer::GetBuffer(LightServer::PointLightBuffer::RADII));
         glBindBufferBase(
             GL_SHADER_STORAGE_BUFFER, 3, LightServer::GetBuffer(LightServer::PointLightBuffer::VISIBLE_INDICES)
-        );
+            );
 
         glUniform2ui(
             glGetUniformLocation(programHandle, "NumTiles"), LightServer::GetWorkGroupsX(),
             LightServer::GetWorkGroupsY()
-        );
+            );
         glUniformMatrix4fv(
             glGetUniformLocation(programHandle, "ViewProjection"), 1, false, &mainCamera->viewProjection[0][0]
-        );
+            );
 
         glUniform4fv(glGetUniformLocation(programHandle, "CameraPosition"), 1, &mainCamera->view[3][0]);
 
@@ -390,7 +401,7 @@ namespace Render {
         glUniformMatrix4fv(
             glGetUniformLocation(programHandle, "GlobalShadowMatrix"), 1, false,
             &globalShadowCamera->viewProjection[0][0]
-        );
+            );
 
         GLuint baseColorFactorLocation = glGetUniformLocation(programHandle, "BaseColorFactor");
         GLuint emissiveFactorLocation = glGetUniformLocation(programHandle, "EmissiveFactor");
@@ -413,7 +424,7 @@ namespace Render {
                             glActiveTexture(GL_TEXTURE0 + i);
                             glBindTexture(
                                 GL_TEXTURE_2D, Render::TextureResource::GetTextureHandle(primitive.material.textures[i])
-                            );
+                                );
                             glUniform1i(i, i);
                         }
                     }
@@ -431,7 +442,7 @@ namespace Render {
                     glBindVertexArray(primitive.vao);
                     glDrawElements(
                         GL_TRIANGLES, primitive.numIndices, primitive.indexType, (void*)(intptr_t)primitive.offset
-                    );
+                        );
                 }
             }
         }
@@ -484,7 +495,7 @@ namespace Render {
             glUniform3ui(
                 glGetUniformLocation(simProgramHandle, "Random"), Core::FastRandom(), Core::FastRandom(),
                 Core::FastRandom()
-            );
+                );
 
             const int numWorkGroups[3] = {
                 emitter->data.numParticles / 1024,
@@ -506,15 +517,15 @@ namespace Render {
             {0, 1, 0, 0},
             {0, 0, 1, 0},
             mainCamera->view[3]
-        );
+            );
         glm::mat4 billboardViewProjection = mainCamera->projection * billboardView;
 
         glUniformMatrix4fv(
             glGetUniformLocation(programHandle, "ViewProjection"), 1, false, &mainCamera->viewProjection[0][0]
-        );
+            );
         glUniformMatrix4fv(
             glGetUniformLocation(programHandle, "BillBoardViewProjection"), 1, false, &billboardViewProjection[0][0]
-        );
+            );
         GLuint particleOffsetLoc = glGetUniformLocation(programHandle, "ParticleOffset");
 
         for (auto emitter: particles->emitters) {

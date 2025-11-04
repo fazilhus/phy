@@ -191,10 +191,12 @@ namespace Render {
                 glBindVertexArray(primitive.vao);
 
                 static Render::ShaderResourceId const vs = Render::ShaderResource::LoadShader(
-                    Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_debug.glsl").c_str()
+                    Render::ShaderResource::ShaderType::VERTEXSHADER,
+                    fs::create_path_from_rel_s("shd/vs_debug.glsl").c_str()
                 );
                 static Render::ShaderResourceId const fs = Render::ShaderResource::LoadShader(
-                    Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_debug.glsl").c_str()
+                    Render::ShaderResource::ShaderType::FRAGMENTSHADER,
+                    fs::create_path_from_rel_s("shd/fs_debug.glsl").c_str()
                 );
                 static ShaderProgramId debugProgram = Render::ShaderResource::CompileShaderProgram({vs, fs});
                 GLuint debugProgramHandle = ShaderResource::GetProgramHandle(debugProgram);

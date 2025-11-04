@@ -163,10 +163,12 @@ namespace Debug {
         shaders[DebugShape::LINE] = Render::ShaderResource::GetProgramHandle(progLine);
 
         Render::ShaderResourceId const vsGrid = Render::ShaderResource::LoadShader(
-            Render::ShaderResource::ShaderType::VERTEXSHADER, fs::create_path_from_rel_s("shd/vs_debug_grid.glsl").c_str()
+            Render::ShaderResource::ShaderType::VERTEXSHADER,
+            fs::create_path_from_rel_s("shd/vs_debug_grid.glsl").c_str()
             );
         Render::ShaderResourceId const fsGrid = Render::ShaderResource::LoadShader(
-            Render::ShaderResource::ShaderType::FRAGMENTSHADER, fs::create_path_from_rel_s("shd/fs_debug_grid.glsl").c_str()
+            Render::ShaderResource::ShaderType::FRAGMENTSHADER,
+            fs::create_path_from_rel_s("shd/fs_debug_grid.glsl").c_str()
             );
         Render::ShaderProgramId const progGrid = Render::ShaderResource::CompileShaderProgram({vsGrid, fsGrid});
         shaders[DebugShape::GRID] = Render::ShaderResource::GetProgramHandle(progGrid);
@@ -251,6 +253,7 @@ namespace Debug {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
+
 
     namespace Internal {
         static constexpr size_t gridSize = 50;

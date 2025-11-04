@@ -97,7 +97,8 @@ namespace Input {
             hid->mouse.pressed[button] = true;
             hid->mouse.held[button] = true;
         }
-        else if (action == GLFW_RELEASE) { hid->mouse.released[button] = true; }
+        else
+            if (action == GLFW_RELEASE) { hid->mouse.released[button] = true; }
     }
 
     //------------------------------------------------------------------------------

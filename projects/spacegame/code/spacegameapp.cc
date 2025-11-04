@@ -44,9 +44,7 @@ namespace Game {
     */
     SpaceGameApp::~SpaceGameApp() {
         // empty
-        if (camera != nullptr) {
-            delete camera;
-        }
+        if (camera != nullptr) { delete camera; }
     }
 
     //------------------------------------------------------------------------------

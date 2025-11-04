@@ -8,6 +8,8 @@
 */
 //------------------------------------------------------------------------------
 #include "config.h"
+
+
 namespace Render {
 #define CAMERA_MAIN uint32_t('DFCM')
 

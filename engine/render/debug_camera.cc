@@ -30,9 +30,7 @@ namespace Render {
         vel = Math::safe_normal(vel);
 
         auto md = glm::vec2(0);
-        if (mouse->held[Mouse::Button::RightButton]) {
-            md = mouse->delta;
-        }
+        if (mouse->held[Mouse::Button::RightButton]) { md = mouse->delta; }
 
         const auto yaw = glm::quat(glm::vec3(0, -md.x, 0) * this->rot_speed * dt);
         const auto pitch = glm::quat(glm::vec3(md.y, 0, 0) * this->rot_speed * dt);

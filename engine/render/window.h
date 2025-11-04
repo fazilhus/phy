@@ -124,7 +124,6 @@ namespace Display {
     inline void Window::GetSize(int32& width, int32& height) {
         width = this->width;
         height = this->height;
-
     }
 
     //------------------------------------------------------------------------------
@@ -197,5 +196,4 @@ namespace Display {
     /**
     */
     inline void Window::SetUiRender(const std::function<void()>& func) { this->uiFunc = func; }
-
 } // namespace Display
