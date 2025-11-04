@@ -7,6 +7,7 @@
 */
 //------------------------------------------------------------------------------
 #include "core/app.h"
+#include "render/debug_camera.h"
 #include "render/window.h"
 
 
@@ -30,5 +31,6 @@ namespace Game {
         void RenderUI();
 
         Display::Window* window;
+        Render::DebugCamera camera;
     };
 } // namespace Game

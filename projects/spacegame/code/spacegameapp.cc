@@ -35,7 +35,7 @@ namespace Game {
     //------------------------------------------------------------------------------
     /**
     */
-    SpaceGameApp::SpaceGameApp() {
+    SpaceGameApp::SpaceGameApp() : camera(5) {
         // empty
     }
 
@@ -177,6 +177,7 @@ namespace Game {
             glCullFace(GL_BACK);
 
             this->window->Update();
+            this->camera.Update(dt);
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
@@ -211,6 +212,13 @@ namespace Game {
     void SpaceGameApp::RenderUI() {
         if (this->window->IsOpen()) {
             ImGui::Begin("Debug");
+
+            // bool show = true;
+            // ImGui::ShowDemoWindow(&show);
+
+            ImGui::SeparatorText("Debug Camera");
+            ImGui::InputFloat3("Pos", &camera.pos.x);
+
             Core::CVar* r_draw_light_spheres = Core::CVarGet("r_draw_light_spheres");
             int drawLightSpheres = Core::CVarReadInt(r_draw_light_spheres);
             if (ImGui::Checkbox("Draw Light Spheres", (bool*)&drawLightSpheres))

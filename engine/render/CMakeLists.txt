@@ -21,6 +21,8 @@ SET(files_render_render
     lightserver.cc
     cameramanager.h
     cameramanager.cc
+    debug_camera.h
+    debug_camera.cc
     debugrender.h
     debugrender.cc
     grid.h
