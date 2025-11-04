@@ -2,8 +2,9 @@
 # physics
 #--------------------------------------------------------------------------
 SET(files_physics
+    plane.h
 )
-SOURCE_GROUP("core" FILES ${files_physics})
+SOURCE_GROUP("physics" FILES ${files_physics})
 
 SET(files_pch ../config.h ../config.cc)
 SOURCE_GROUP("pch" FILES ${files_pch})

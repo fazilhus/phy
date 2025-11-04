@@ -25,8 +25,6 @@ SET(files_render_render
     debug_camera.cc
     debugrender.h
     debugrender.cc
-    grid.h
-    grid.cc
     lightsources.h
     resourceid.h
     particlesystem.cc

@@ -24,7 +24,7 @@ namespace Render {
         if (kbd->held[Key::D]) { vel.x -= 1.0; }
 
         vel = this->trans * glm::vec4(vel, 0.0f);
-        
+
         if (kbd->held[Key::Q]) { vel.y += 1.0; }
         if (kbd->held[Key::E]) { vel.y -= 1.0; }
         vel = Math::safe_normal(vel);

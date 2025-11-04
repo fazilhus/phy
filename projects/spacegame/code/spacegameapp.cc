@@ -35,7 +35,7 @@ namespace Game {
     //------------------------------------------------------------------------------
     /**
     */
-    SpaceGameApp::SpaceGameApp() : camera(5) {
+    SpaceGameApp::SpaceGameApp() {
         // empty
     }
 
@@ -44,6 +44,9 @@ namespace Game {
     */
     SpaceGameApp::~SpaceGameApp() {
         // empty
+        if (camera != nullptr) {
+            delete camera;
+        }
     }
 
     //------------------------------------------------------------------------------
@@ -82,6 +85,8 @@ namespace Game {
         auto cam_pos = glm::vec3(0, 0, 0);
         auto t = glm::mat4(1.0f);
         cam->view = lookAt(cam_pos, cam_pos + glm::vec3(t[2]), glm::vec3(t[1]));
+
+        camera = new Render::DebugCamera(5.0f, 2.5f);
 
         // load all resources
         ModelId models[6] = {
@@ -177,12 +182,12 @@ namespace Game {
             glCullFace(GL_BACK);
 
             this->window->Update();
-            this->camera.Update(dt);
+            this->camera->Update(dt);
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
-            // Draw some debug text
-            Debug::DrawDebugText("FOOBAR", glm::vec3(0), {1, 0, 0, 1});
+            const auto cam = CameraManager::GetCamera(CAMERA_MAIN);
+            Debug::DrawGrid(cam->viewProjection);
 
             // Store all drawcalls in the render device
             for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<1>(asteroid)); }
@@ -217,7 +222,7 @@ namespace Game {
             // ImGui::ShowDemoWindow(&show);
 
             ImGui::SeparatorText("Debug Camera");
-            ImGui::InputFloat3("Pos", &camera.pos.x);
+            ImGui::InputFloat3("Pos", &camera->pos[0]);
 
             Core::CVar* r_draw_light_spheres = Core::CVarGet("r_draw_light_spheres");
             int drawLightSpheres = Core::CVarReadInt(r_draw_light_spheres);

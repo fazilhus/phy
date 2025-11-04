@@ -31,6 +31,6 @@ namespace Game {
         void RenderUI();
 
         Display::Window* window;
-        Render::DebugCamera camera;
+        Render::DebugCamera* camera;
     };
 } // namespace Game
