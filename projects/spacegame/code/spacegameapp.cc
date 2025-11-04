@@ -21,6 +21,8 @@
 #include "fx/gltf.h"
 
 #include "core/filesystem.h"
+#include "core/math.h"
+#include "physics/plane.h"
 
 using namespace Display;
 using namespace Render;
@@ -171,6 +173,8 @@ namespace Game {
         std::clock_t c_start = std::clock();
         double dt = 0.01667f;
 
+        Physics::Plane p(glm::vec3(0, 0, 0), glm::vec3(0,1,0));
+
         // game loop
         while (this->window->IsOpen()) {
             auto timeStart = std::chrono::steady_clock::now();
@@ -185,8 +189,7 @@ namespace Game {
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
             Debug::DrawGrid();
-
-            Debug::DrawQuad(glm::vec3(0, 0, 0), glm::quat(), 1.0f, glm::vec4(1,0,0,1));
+            Debug::DrawPlane(p, Debug::WireFrame);
 
             // Store all drawcalls in the render device
             for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<1>(asteroid)); }

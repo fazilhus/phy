@@ -12,6 +12,7 @@
 #include "shaderresource.h"
 #include "cameramanager.h"
 #include "imgui.h"
+#include "core/math.h"
 
 
 namespace Debug {
@@ -90,10 +91,17 @@ namespace Debug {
         cmds.push(cmd);
     }
 
+    void DrawLine(
+        const glm::vec3& startPoint, const glm::vec3& endPoint, const float lineWidth, const glm::vec4& color,
+        const RenderMode& renderModes
+        ) {
+        DrawLine(startPoint, endPoint, lineWidth, color, color, renderModes);
+    }
+
     void DrawQuad(
         const glm::mat4& transform, const glm::vec4& color, const RenderMode render_mode, const float line_width
         ) {
-        QuadCommand* cmd = new QuadCommand();
+        const auto cmd = new QuadCommand();
         cmd->shape = DebugShape::QUAD;
         cmd->transform = transform;
         cmd->linewidth = line_width;
@@ -151,11 +159,16 @@ namespace Debug {
     }
 
     void DrawGrid(const RenderMode renderModes, const float lineWidth) {
-        GridCommand* cmd = new GridCommand();
+        const auto cmd = new GridCommand();
         cmd->shape = DebugShape::GRID;
         cmd->rendermode = renderModes;
         cmd->linewidth = lineWidth;
         cmds.push(cmd);
+    }
+
+    void DrawPlane(const Physics::Plane& plane, const RenderMode render_mode, const float line_width) {
+        DrawQuad(plane.point(), Math::rot_vec3(plane.norm), 1.0f, glm::vec4(1,0,0,1), render_mode, line_width);
+        DrawLine(plane.point(), plane.point() + plane.norm * 1.0f, line_width, glm::vec4(1,0,0,1), render_mode);
     }
 
     void SetupShaders() {
@@ -218,7 +231,7 @@ namespace Debug {
             -0.5f, -0.5f, 0.0f,
             0.5f, -0.5f, 0.0f,
         };
-        constexpr auto indices_size = 16;
+        constexpr auto indices_size = 18;
         constexpr int indices[indices_size] = {
             0, 1, 2,
             2, 1, 3,
@@ -227,7 +240,8 @@ namespace Debug {
             1, 2,
             2, 0,
             1, 3,
-            3, 2
+            3, 2,
+            0, 3
         };
 
         glGenVertexArrays(1, &vao[DebugShape::QUAD]);
@@ -441,6 +455,7 @@ namespace Debug {
         glUniformMatrix4fv(model, 1, GL_FALSE, &cmd->transform[0][0]);
         glUniformMatrix4fv(viewProjection, 1, GL_FALSE, &mainCamera->viewProjection[0][0]);
 
+        glDisable(GL_CULL_FACE);
         if ((cmd->rendermode & RenderMode::AlwaysOnTop) == RenderMode::AlwaysOnTop) {
             glDepthFunc(GL_ALWAYS);
             glDepthRange(0.0f, 0.01f);
@@ -450,7 +465,7 @@ namespace Debug {
             glPolygonMode(GL_FRONT, GL_LINE);
             glLineWidth(cmd->linewidth);
 
-            glDrawElements(GL_LINES, 10, GL_UNSIGNED_INT, (void*)(6 * sizeof(GLuint)));
+            glDrawElements(GL_LINES, 12, GL_UNSIGNED_INT, (void*)(6 * sizeof(GLuint)));
             glPolygonMode(GL_FRONT, GL_FILL);
         }
         else { glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL); }
@@ -459,6 +474,7 @@ namespace Debug {
             glDepthFunc(GL_LEQUAL);
             glDepthRange(0.0f, 1.0f);
         }
+        glEnable(GL_CULL_FACE);
 
         glBindVertexArray(0);
     }
