@@ -24,6 +24,19 @@ namespace Debug {
         const glm::vec3& startPoint, const glm::vec3& endPoint, const float lineWidth, const glm::vec4& startColor,
         const glm::vec4& endColor, const RenderMode& renderModes = RenderMode::Normal
         );
+    void DrawQuad(
+        const glm::mat4& transform, const glm::vec4& color, const RenderMode render_mode = RenderMode::Normal,
+        const float line_width = 1.0f
+        );
+    void DrawQuad(
+        const glm::vec3& pos, const glm::quat& rot, const float scale, const glm::vec4& color,
+        const RenderMode render_mode = RenderMode::Normal, const float line_width = 1.0f
+        );
+    void DrawQuad(
+        const glm::vec3& pos, const glm::quat& rot, const float scale, const glm::vec4& color,
+        const float width, const float height,
+        const RenderMode render_mode = RenderMode::Normal, const float line_width = 1.0f
+        );
     ///Draws a unit colored cube at position with rotation and scale
     void DrawBox(
         const glm::vec3& position, const glm::quat& rotation, const float scale, const glm::vec4& color,
@@ -40,7 +53,7 @@ namespace Debug {
         const float lineWidth = 1.0f
         );
     void DrawGrid(
-        const glm::mat4& view_proj, const RenderMode renderModes = RenderMode::Normal, const float lineWidth = 1.0f
+        const RenderMode renderModes = RenderMode::Normal, const float lineWidth = 1.0f
         );
 
     void InitDebugRendering();

@@ -17,6 +17,7 @@
 namespace Debug {
     enum DebugShape {
         LINE,
+        QUAD,
         SPHERE,
         BOX,
         CONE,
@@ -41,14 +42,17 @@ namespace Debug {
         glm::vec4 endcolor = glm::vec4(1.0f);
     };
 
+    struct QuadCommand : public RenderCommand {
+        glm::mat4 transform = glm::mat4();
+        glm::vec4 color = glm::vec4(1.0f);
+    };
+
     struct BoxCommand : public RenderCommand {
         glm::mat4 transform = glm::mat4();
         glm::vec4 color = glm::vec4(1.0f);
     };
 
-    struct GridCommand : public RenderCommand {
-        glm::mat4 vp = glm::mat4();
-    };
+    struct GridCommand : public RenderCommand {};
 
     struct TextCommand {
         glm::vec4 point;
@@ -86,42 +90,58 @@ namespace Debug {
         cmds.push(cmd);
     }
 
+    void DrawQuad(
+        const glm::mat4& transform, const glm::vec4& color, const RenderMode render_mode, const float line_width
+        ) {
+        QuadCommand* cmd = new QuadCommand();
+        cmd->shape = DebugShape::QUAD;
+        cmd->transform = transform;
+        cmd->linewidth = line_width;
+        cmd->color = color;
+        cmd->rendermode = render_mode;
+        cmds.push(cmd);
+    }
+
+    void DrawQuad(
+        const glm::vec3& pos, const glm::quat& rot, const float scale, const glm::vec4& color,
+        const RenderMode render_mode, const float line_width
+        ) {
+        const glm::mat4 t = glm::translate(pos) * static_cast<glm::mat4>(rot) * glm::scale(glm::vec3(scale));
+
+        DrawQuad(t, color, render_mode, line_width);
+    }
+
+    void DrawQuad(
+        const glm::vec3& pos, const glm::quat& rot, const float scale, const glm::vec4& color, const float width,
+        const float height, const RenderMode render_mode, const float line_width
+        ) {
+        const glm::mat4 t = glm::translate(pos) * static_cast<glm::mat4>(rot) * glm::scale(glm::vec3(width, height, 1.0f));
+
+        DrawQuad(t, color, render_mode, line_width);
+    }
+
     void DrawBox(
         const glm::vec3& position, const glm::quat& rotation, const float scale, const glm::vec4& color,
         const RenderMode renderModes, const float lineWidth
         ) {
-        glm::mat4 transform = glm::scale(glm::vec3(scale)) * (glm::mat4)rotation;
-        glm::translate(transform, position);
+        const glm::mat4 transform = glm::translate(position) * static_cast<glm::mat4>(rotation) * glm::scale(glm::vec3(scale));
 
-        BoxCommand* cmd = new BoxCommand();
-        cmd->shape = DebugShape::BOX;
-        cmd->transform = transform;
-        cmd->linewidth = lineWidth;
-        cmd->color = color;
-        cmd->rendermode = renderModes;
-        cmds.push(cmd);
+        DrawBox(transform, color, renderModes, lineWidth);
     }
 
     void DrawBox(
         const glm::vec3& position, const glm::quat& rotation, const float width, const float height, const float length,
         const glm::vec4& color, const RenderMode renderModes, const float lineWidth
         ) {
-        glm::mat4 transform = glm::scale(glm::vec3(width, height, length)) * (glm::mat4)rotation;
-        glm::translate(transform, position);
+        const glm::mat4 transform = glm::translate(position) * static_cast<glm::mat4>(rotation) * glm::scale(glm::vec3(width, height, length));
 
-        BoxCommand* cmd = new BoxCommand();
-        cmd->shape = DebugShape::BOX;
-        cmd->transform = transform;
-        cmd->linewidth = lineWidth;
-        cmd->color = color;
-        cmd->rendermode = renderModes;
-        cmds.push(cmd);
+        DrawBox(transform, color, renderModes, lineWidth);
     }
 
     void DrawBox(
         const glm::mat4& transform, const glm::vec4& color, const RenderMode renderModes, const float lineWidth
         ) {
-        BoxCommand* cmd = new BoxCommand();
+        const auto cmd = new BoxCommand();
         cmd->shape = DebugShape::BOX;
         cmd->transform = transform;
         cmd->linewidth = lineWidth;
@@ -130,10 +150,9 @@ namespace Debug {
         cmds.push(cmd);
     }
 
-    void DrawGrid(const glm::mat4& view_proj, const RenderMode renderModes, const float lineWidth) {
+    void DrawGrid(const RenderMode renderModes, const float lineWidth) {
         GridCommand* cmd = new GridCommand();
         cmd->shape = DebugShape::GRID;
-        cmd->vp = view_proj;
         cmd->rendermode = renderModes;
         cmd->linewidth = lineWidth;
         cmds.push(cmd);
@@ -149,6 +168,7 @@ namespace Debug {
             fs::create_path_from_rel_s("shd/fs_debug.glsl").c_str()
             );
         Render::ShaderProgramId const progDebug = Render::ShaderResource::CompileShaderProgram({vsDebug, psDebug});
+        shaders[DebugShape::QUAD] = Render::ShaderResource::GetProgramHandle(progDebug);
         shaders[DebugShape::BOX] = Render::ShaderResource::GetProgramHandle(progDebug);
 
         Render::ShaderResourceId const vsLine = Render::ShaderResource::LoadShader(
@@ -190,9 +210,48 @@ namespace Debug {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
+    void SetupQuad() {
+        constexpr auto mesh_size = 12;
+        constexpr GLfloat mesh[mesh_size] = {
+            -0.5f, 0.5f, 0.0f,
+            0.5f, 0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+        };
+        constexpr auto indices_size = 16;
+        constexpr int indices[indices_size] = {
+            0, 1, 2,
+            2, 1, 3,
+
+            0, 1,
+            1, 2,
+            2, 0,
+            1, 3,
+            3, 2
+        };
+
+        glGenVertexArrays(1, &vao[DebugShape::QUAD]);
+        glBindVertexArray(vao[DebugShape::QUAD]);
+
+        glGenBuffers(1, &vbo[DebugShape::QUAD]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[DebugShape::QUAD]);
+        glBufferData(GL_ARRAY_BUFFER, mesh_size * sizeof(GLfloat), mesh, GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, NULL);
+
+        glGenBuffers(1, &ib[DebugShape::QUAD]);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib[DebugShape::QUAD]);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(GLuint), indices, GL_STATIC_DRAW);
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
     void SetupBox() {
-        const int meshSize = 24;
-        const GLfloat mesh[meshSize] =
+        constexpr auto meshSize = 24;
+        constexpr GLfloat mesh[meshSize] =
         {
             0.5, -0.5, -0.5,
             0.5, -0.5, 0.5,
@@ -203,8 +262,8 @@ namespace Debug {
             -0.5, 0.5, 0.5,
             -0.5, 0.5, -0.5
         };
-        const int indicesSize = 60;
-        const int indices[indicesSize] =
+        constexpr auto indicesSize = 60;
+        constexpr int indices[indicesSize] =
         {
             // triangles
             0, 1, 2,
@@ -318,6 +377,7 @@ namespace Debug {
     void InitDebugRendering() {
         SetupShaders();
         SetupLine();
+        SetupQuad();
         SetupBox();
         SetupGrid();
     }
@@ -366,6 +426,43 @@ namespace Debug {
         }
     }
 
+    void RenderQuad(RenderCommand* command) {
+        const auto cmd = static_cast<QuadCommand*>(command);
+
+        glUseProgram(shaders[DebugShape::QUAD]);
+        glBindVertexArray(vao[DebugShape::QUAD]);
+
+        const GLuint loc = glGetUniformLocation(shaders[DebugShape::QUAD], "color");
+        glUniform4fv(loc, 1, &cmd->color.x);
+
+        static GLuint model = glGetUniformLocation(shaders[DebugShape::QUAD], "model");
+        static GLuint viewProjection = glGetUniformLocation(shaders[DebugShape::QUAD], "viewProjection");
+        const Render::Camera* const mainCamera = Render::CameraManager::GetCamera(CAMERA_MAIN);
+        glUniformMatrix4fv(model, 1, GL_FALSE, &cmd->transform[0][0]);
+        glUniformMatrix4fv(viewProjection, 1, GL_FALSE, &mainCamera->viewProjection[0][0]);
+
+        if ((cmd->rendermode & RenderMode::AlwaysOnTop) == RenderMode::AlwaysOnTop) {
+            glDepthFunc(GL_ALWAYS);
+            glDepthRange(0.0f, 0.01f);
+        }
+
+        if ((cmd->rendermode & RenderMode::WireFrame) == RenderMode::WireFrame) {
+            glPolygonMode(GL_FRONT, GL_LINE);
+            glLineWidth(cmd->linewidth);
+
+            glDrawElements(GL_LINES, 10, GL_UNSIGNED_INT, (void*)(6 * sizeof(GLuint)));
+            glPolygonMode(GL_FRONT, GL_FILL);
+        }
+        else { glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL); }
+
+        if ((cmd->rendermode & RenderMode::AlwaysOnTop) == RenderMode::AlwaysOnTop) {
+            glDepthFunc(GL_LEQUAL);
+            glDepthRange(0.0f, 1.0f);
+        }
+
+        glBindVertexArray(0);
+    }
+
     void RenderBox(RenderCommand* command) {
         BoxCommand* cmd = (BoxCommand*)command;
 
@@ -409,7 +506,8 @@ namespace Debug {
 
         glUseProgram(shaders[DebugShape::GRID]);
         glBindVertexArray(vao[DebugShape::GRID]);
-        glUniformMatrix4fv(0, 1, false, &cmd->vp[0][0]);
+        Render::Camera* const mainCamera = Render::CameraManager::GetCamera(CAMERA_MAIN);
+        glUniformMatrix4fv(0, 1, false, &mainCamera->viewProjection[0][0]);
         glDrawArrays(GL_LINES, 0, Internal::gridSize * 2 * 2);
         glBindVertexArray(0);
     }
@@ -421,6 +519,10 @@ namespace Debug {
             switch (currentCommand->shape) {
             case DebugShape::LINE: {
                 RenderLine(currentCommand);
+                break;
+            }
+            case DebugShape::QUAD: {
+                RenderQuad(currentCommand);
                 break;
             }
             case DebugShape::BOX: {

@@ -184,8 +184,9 @@ namespace Game {
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
-            const auto cam = CameraManager::GetCamera(CAMERA_MAIN);
-            Debug::DrawGrid(cam->viewProjection);
+            Debug::DrawGrid();
+
+            Debug::DrawQuad(glm::vec3(0, 0, 0), glm::quat(), 1.0f, glm::vec4(1,0,0,1));
 
             // Store all drawcalls in the render device
             for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<1>(asteroid)); }
