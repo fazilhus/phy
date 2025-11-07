@@ -19,9 +19,7 @@ namespace Display {
     //------------------------------------------------------------------------------
     /**
     */
-    static void GLAPIENTRY
-
-    GLDebugCallback(
+    static void GLAPIENTRY GLDebugCallback(
         GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
         const void* userParam
     ) {

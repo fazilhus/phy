@@ -22,14 +22,11 @@
 
 #include "core/filesystem.h"
 #include "core/math.h"
+#include "physics/physicsmesh.h"
 #include "physics/plane.h"
 
 using namespace Display;
 using namespace Render;
-
-#ifndef ENV_ROOT
-#define ENV_ROOT "."
-#endif
 
 
 namespace Game {
@@ -97,12 +94,20 @@ namespace Game {
             LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_5.glb")),
             LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_6.glb"))
         };
+        Physics::ColliderMeshId colliders[6] = {
+            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_1_physics.glb")),
+            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_2_physics.glb")),
+            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_3_physics.glb")),
+            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_4_physics.glb")),
+            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_5_physics.glb")),
+            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_6_physics.glb")),
+        };
 
-        std::vector<std::tuple<ModelId, glm::mat4>> asteroids;
+        std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
 
         // Setup asteroids near
         for (int i = 0; i < 100; i++) {
-            std::tuple<ModelId, glm::mat4> asteroid;
+            std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
             std::get<0>(asteroid) = models[resourceIndex];
             float span = 20.0f;
@@ -114,13 +119,14 @@ namespace Game {
             glm::vec3 rotationAxis = normalize(translation);
             float rotation = translation.x;
             glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
-            std::get<1>(asteroid) = transform;
+            std::get<1>(asteroid) = Physics::create_collider(colliders[resourceIndex], transform);
+            std::get<2>(asteroid) = transform;
             asteroids.push_back(asteroid);
         }
 
         // Setup asteroids far
         for (int i = 0; i < 50; i++) {
-            std::tuple<ModelId, glm::mat4> asteroid;
+            std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
             std::get<0>(asteroid) = models[resourceIndex];
             float span = 80.0f;
@@ -132,7 +138,8 @@ namespace Game {
             glm::vec3 rotationAxis = normalize(translation);
             float rotation = translation.x;
             glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
-            std::get<1>(asteroid) = transform;
+            std::get<1>(asteroid) = Physics::create_collider(colliders[resourceIndex], transform);
+            std::get<2>(asteroid) = transform;
             asteroids.push_back(asteroid);
         }
 
@@ -150,6 +157,7 @@ namespace Game {
         RenderDevice::SetSkybox(skyboxId);
 
         Input::Keyboard* kbd = Input::GetDefaultKeyboard();
+        Input::Mouse* mouse = Input::GetDefaultMouse();
 
         const int numLights = 40;
         Render::PointLightId lights[numLights];
@@ -173,7 +181,8 @@ namespace Game {
         std::clock_t c_start = std::clock();
         double dt = 0.01667f;
 
-        Physics::Plane p(glm::vec3(0, 0, 0), glm::vec3(0,1,0));
+        Physics::Plane p(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+        Physics::Ray r(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
 
         // game loop
         while (this->window->IsOpen()) {
@@ -191,8 +200,17 @@ namespace Game {
             Debug::DrawGrid();
             Debug::DrawPlane(p, Debug::WireFrame);
 
+            if (kbd->held[Input::Key::LeftControl] && mouse->held[Input::Mouse::Button::LeftButton]) {
+                r = this->camera->SpawnRay();
+            }
+            Debug::DrawRay(r, glm::vec4(1, 0, 1, 1));
+            Physics::HitInfo hit;
+            if (p.intersect(r, hit)) { Debug::DrawBox(hit.pos, glm::quat(), 0.1f, glm::vec4(0.8f, 0.2f, 0.8f, 1.0f)); }
+
+            Debug::DrawAABB();
+
             // Store all drawcalls in the render device
-            for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<1>(asteroid)); }
+            for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<2>(asteroid)); }
 
             // Execute the entire rendering pipeline
             RenderDevice::Render(this->window, dt);
@@ -223,8 +241,14 @@ namespace Game {
             // bool show = true;
             // ImGui::ShowDemoWindow(&show);
 
-            ImGui::SeparatorText("Debug Camera");
+            ImGui::Text("Debug Camera");
             ImGui::InputFloat3("Pos", &camera->pos[0]);
+
+            ImGui::SeparatorText("Mouse");
+            auto ml = Math::norm_screen_pos(Input::GetDefaultMouse()->position, glm::vec2(1920.0f, 1080.0f));
+            ImGui::InputFloat2("Loc", &ml[0]);
+
+            ImGui::SeparatorText("Debug Draw");
 
             Core::CVar* r_draw_light_spheres = Core::CVarGet("r_draw_light_spheres");
             int drawLightSpheres = Core::CVarReadInt(r_draw_light_spheres);
@@ -235,6 +259,17 @@ namespace Game {
             int lightSphereId = Core::CVarReadInt(r_draw_light_sphere_id);
             if (ImGui::InputInt("LightSphereId", (int*)&lightSphereId))
                 Core::CVarWriteInt(r_draw_light_sphere_id, lightSphereId);
+
+            ImGui::Separator();
+            Core::CVar* r_draw_aabb = Core::CVarGet("r_draw_aabb");
+            int draw_aabb = Core::CVarReadInt(r_draw_aabb);
+            if (ImGui::Checkbox("Draw AABBs", (bool*)&draw_aabb))
+                Core::CVarWriteInt(r_draw_aabb, draw_aabb);
+
+            Core::CVar* r_draw_aabb_id = Core::CVarGet("r_draw_aabb_id");
+            int draw_aabb_id = Core::CVarReadInt(r_draw_aabb_id);
+            if (ImGui::InputInt("Draw AABB by id", (int*)&draw_aabb_id))
+                Core::CVarWriteInt(r_draw_aabb_id, draw_aabb_id);
 
             ImGui::End();
 

@@ -1,7 +1,8 @@
 ﻿#pragma once
+#include "phy.h"
+#include "ray.h"
 #include "vec3.hpp"
 #include "vec4.hpp"
-#include "ext/quaternion_geometric.hpp"
 
 
 namespace Physics {
@@ -11,18 +12,27 @@ namespace Physics {
         float dist;
 
         explicit Plane(const glm::vec3& point, const glm::vec3& norm)
-            : norm(norm), dist(glm::length(point)) {
-        }
+            : norm(norm), dist(glm::length(point)) {}
 
         Plane(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
-            auto v1 = a - b;
-            auto v2 = a - c;
+            const auto v1 = a - b;
+            const auto v2 = a - c;
             norm = glm::cross(v1, v2);
-            dist = (a * norm).length();
+            dist = glm::length(a * norm);
         }
 
-        glm::vec3 point() const {
-            return norm * dist;
+        [[nodiscard]] glm::vec3 point() const { return norm * dist; }
+
+        bool intersect(const Ray& ray, HitInfo& hit) const {
+            if (const auto denominator = glm::dot(this->norm, ray.dir);
+                abs(denominator) > epsilon) {
+                if (const auto t = glm::dot(this->point() - ray.orig, this->norm) / denominator;
+                    t > epsilon) {
+                    hit.pos = ray.orig + t * ray.dir;
+                    return true;
+                    }
+                }
+            return false;
         }
     };
 

@@ -7,8 +7,8 @@ namespace Render {
     using ShaderResourceId = ResourceId;
     using ShaderProgramId = ResourceId;
 
-    using ModelId = uint32_t;
-    using BrushGroupId = uint32_t;
+    using ModelId = ResourceId;
+    using BrushGroupId = ResourceId;
 
     using TextureResourceId = ResourceId;
 }

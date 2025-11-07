@@ -2,7 +2,11 @@
 # physics
 #--------------------------------------------------------------------------
 SET(files_physics
+    phy.h
     plane.h
+    ray.h
+    physicsmesh.h
+    physicsmesh.cc
 )
 SOURCE_GROUP("physics" FILES ${files_physics})
 

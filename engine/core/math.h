@@ -11,6 +11,10 @@ namespace Math {
         return v / sqrt(len_sq);
     }
 
+    inline glm::vec2 norm_screen_pos(const glm::vec2& sp, const glm::vec2& ss) {
+        return glm::vec2(2.0f * (sp / ss) - 1.0f);
+    }
+
     inline glm::quat rot_vec3(const glm::vec3& norm) {
         constexpr auto up = glm::vec3(0.0f, 0.0f, 1.0f);
         const auto axis = glm::cross(up, norm);

@@ -1,4 +1,7 @@
 ﻿#pragma once
+#include "cameramanager.h"
+#include "physics/ray.h"
+
 
 namespace Render {
 
@@ -13,6 +16,8 @@ namespace Render {
             : speed(speed), rot_speed(rot_speed) {}
 
         void Update(float dt);
+
+        Physics::Ray SpawnRay() const;
     };
 
 } // namespace Render

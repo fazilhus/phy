@@ -1,5 +1,6 @@
 #pragma once
 #include "physics/plane.h"
+#include "physics/ray.h"
 //------------------------------------------------------------------------------
 /**
 	@file	debugrender.h
@@ -57,12 +58,16 @@ namespace Debug {
         const glm::mat4& transform, const glm::vec4& color, const RenderMode renderModes = RenderMode::Normal,
         const float lineWidth = 1.0f
         );
+
     void DrawGrid(
         const RenderMode renderModes = RenderMode::Normal, const float lineWidth = 1.0f
         );
     void DrawPlane(
         const Physics::Plane& plane, const RenderMode render_modes = RenderMode::Normal, const float line_width = 1.0f
         );
+    void DrawRay(const Physics::Ray& ray, const glm::vec4& color, const float line_width = 1.0f);
+
+    void DrawAABB();
 
     void InitDebugRendering();
     void DispatchDebugDrawing();

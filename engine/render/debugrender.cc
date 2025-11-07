@@ -12,7 +12,9 @@
 #include "shaderresource.h"
 #include "cameramanager.h"
 #include "imgui.h"
+#include "core/cvar.h"
 #include "core/math.h"
+#include "physics/physicsmesh.h"
 
 
 namespace Debug {
@@ -169,6 +171,38 @@ namespace Debug {
     void DrawPlane(const Physics::Plane& plane, const RenderMode render_mode, const float line_width) {
         DrawQuad(plane.point(), Math::rot_vec3(plane.norm), 1.0f, glm::vec4(1,0,0,1), render_mode, line_width);
         DrawLine(plane.point(), plane.point() + plane.norm * 1.0f, line_width, glm::vec4(1,0,0,1), render_mode);
+    }
+
+    void DrawRay(const Physics::Ray& ray, const glm::vec4& color, const float line_width) {
+        DrawLine(ray.orig, ray.orig + ray.dir * 10.0f, line_width, color, RenderMode::Normal);
+    }
+
+    static Core::CVar* r_draw_aabb = nullptr;
+    static Core::CVar* r_draw_aabb_id = nullptr;
+
+    void DrawAABB() {
+#if _DEBUG
+        if (Core::CVarReadInt(r_draw_aabb) > 0) {
+            const auto aabb_id = Core::CVarReadInt(r_draw_aabb_id);
+            const auto& colliders = Physics::get_colliders();
+            for (std::size_t i = 0; i < colliders.complex.size(); ++i) {
+                const auto& [min_bound, max_bound] = colliders.simple[i];
+                const auto& t = colliders.transforms[i];
+                if (aabb_id < 0 || i == aabb_id) {
+                    DrawBox(
+                        t * glm::vec4(max_bound - min_bound, 1.0f),
+                        glm::quat(),
+                        max_bound.x - min_bound.x,
+                        max_bound.y - min_bound.y,
+                        max_bound.z - min_bound.z,
+                        glm::vec4(0,1,0,1),
+                        RenderMode::WireFrame,
+                        2.0f
+                    );
+                }
+            }
+        }
+#endif
     }
 
     void SetupShaders() {
@@ -394,6 +428,9 @@ namespace Debug {
         SetupQuad();
         SetupBox();
         SetupGrid();
+
+        r_draw_aabb = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_aabb", "0");
+        r_draw_aabb_id = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_aabb_id", "-1");
     }
 
     void RenderLine(RenderCommand* command) {
