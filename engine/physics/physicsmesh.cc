@@ -3,7 +3,9 @@
 #include "config.h"
 #include "physicsmesh.h"
 
+#include "plane.h"
 #include "core/idpool.h"
+#include "core/math.h"
 #include "fx/gltf.h"
 
 
@@ -59,7 +61,6 @@ namespace Physics {
                     it.v0 - it.v1,
                     it.v0 - it.v2
                     );
-
             }
 
             aabb->grow(glm::vec3(vb_access.min[0], vb_access.min[1], vb_access.min[2]));
@@ -69,12 +70,60 @@ namespace Physics {
     }
 
 
+    bool ColliderMesh::Triangle::intersect(const Ray& r, HitInfo& hit) const {
+        const auto e1 = this->v1 - this->v0;
+        const auto e2 = this->v2 - this->v0;
+        const auto re2n = glm::cross(r.dir, e2);
+
+        const auto det = glm::dot(e1, re2n);
+        if (std::fabs(det) < epsilon) { return false; }
+
+        const auto inv_det = 1.0f / det;
+        const auto s = r.orig - this->v0;
+        const auto u = inv_det * glm::dot(s, re2n);
+
+        if ((u < 0 && abs(u) > epsilon) || (u > 1 && abs(u - 1) > epsilon)) { return false; }
+
+        const auto se1n = glm::cross(s, e1);
+        const auto v = inv_det * glm::dot(r.dir, se1n);
+
+        if ((v < 0 && abs(v) > epsilon) || (u + v > 1 && abs(u + v - 1) > epsilon)) { return false; }
+
+        const auto t = inv_det * glm::dot(e2, se1n);
+
+        if (t > epsilon) {
+            hit.pos = r.orig + r.dir * t;
+            return true;
+        }
+
+        return false;
+    }
+
     void AABB::grow(const glm::vec3& p) {
         this->min_bound = glm::min(this->min_bound, p);
         this->max_bound = glm::max(this->max_bound, p);
     }
 
-    bool AABB::intersect(const Ray& r, HitInfo& hit) const { return {}; }
+    bool AABB::intersect(const Ray& r, HitInfo& hit) const {
+        const auto df = glm::vec3(1) / r.orig;
+        auto tmin{0.0f}, tmax{FLT_MAX};
+
+        for (int i = 0; i < 3; ++i) {
+            float t1 = (this->min_bound[i] - r.dir[i]) * df[i];
+            float t2 = (this->max_bound[i] - r.dir[i]) * df[i];
+
+            tmin = Math::max(tmin, Math::min(t1, t2));
+            tmax = Math::min(tmax, Math::max(t1, t2));
+        }
+
+        if (tmin < tmax) {
+            if (tmin < 0) { hit.pos = r.orig + tmin * r.dir; }
+            else { hit.pos = r.orig + tmax * r.dir; }
+            hit.dist_sq = Math::len_sq(hit.pos);
+        }
+
+        return tmin < tmax;
+    }
 
     ColliderMeshId load_collider_mesh(const std::string& filepath) {
         ColliderMeshId mesh_id;
@@ -157,5 +206,23 @@ namespace Physics {
         assert(collider_id_pool.IsValid(collider));
         colliders.transforms[collider.index] = t;
     }
+
+    bool cast_ray(const Ray& ray, HitInfo& hit) {
+        for (std::size_t i = 0; i < colliders.meshes.size(); ++i) {
+            const auto c = ColliderId(i);
+            const auto& aabb = collider_meshes.simple[colliders.meshes[i].index];
+            HitInfo temp_hit;
+            if (aabb.intersect(ray, temp_hit)) {
+                if (temp_hit.dist_sq < hit.dist_sq) {
+                    hit = temp_hit;
+                    hit.collider = c;
+                }
+            }
+        }
+
+        return hit.hit();
+    }
+
+    bool cast_ray(const glm::vec3& start, const glm::vec3& dir, HitInfo& hit) { return cast_ray(Ray(start, dir), hit); }
 
 } // namespace Physics

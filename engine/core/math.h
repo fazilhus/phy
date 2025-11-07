@@ -5,6 +5,8 @@
 
 namespace Math {
 
+    inline float len_sq(const glm::vec3& v) { return v.x * v.x + v.y * v.y + v.z * v.z; }
+
     inline glm::vec3 safe_normal(const glm::vec3& v) {
         const auto len_sq = v.x * v.x + v.y * v.y + v.z * v.z;
         if (len_sq <= 1e-6) { return glm::vec3(0, 0, 0); }
@@ -22,5 +24,9 @@ namespace Math {
 
         return glm::angleAxis(angle, glm::normalize(axis));
     }
+
+    inline float min(const float a, const float b) { return a < b ? a : b; }
+
+    inline float max(const float a, const float b) { return a > b ? a : b; }
 
 }

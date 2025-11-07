@@ -212,9 +212,23 @@ namespace Game {
             if (kbd->held[Input::Key::LeftControl] && mouse->held[Input::Mouse::Button::LeftButton]) {
                 r = this->camera->SpawnRay();
             }
-            Debug::DrawRay(r, glm::vec4(1, 0, 1, 1));
             Physics::HitInfo hit;
-            if (p.intersect(r, hit)) { Debug::DrawBox(hit.pos, glm::quat(), 0.1f, glm::vec4(0.8f, 0.2f, 0.8f, 1.0f)); }
+            Debug::DrawRay(r, glm::vec4(1, 0, 1, 1));
+            if (Physics::cast_ray(r, hit)) {
+                const auto cm = Physics::get_colliders().meshes[hit.collider.index];
+                const auto trans = Physics::get_colliders().transforms[hit.collider.index];
+                const auto aabb = Physics::get_collider_meshes().simple[cm.index];
+                Debug::DrawBox(
+                    trans * glm::vec4(0.5f * (aabb.max_bound + aabb.min_bound), 1.0f),
+                    glm::quat(),
+                    aabb.max_bound.x - aabb.min_bound.x,
+                    aabb.max_bound.y - aabb.min_bound.y,
+                    aabb.max_bound.z - aabb.min_bound.z,
+                    glm::vec4(0,1,0,1),
+                    static_cast<Debug::RenderMode>(Debug::RenderMode::WireFrame | Debug::RenderMode::AlwaysOnTop),
+                    2.0f
+                );
+            }
 
             // Store all drawcalls in the render device
             for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<2>(asteroid)); }
