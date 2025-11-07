@@ -185,18 +185,19 @@ namespace Debug {
         if (Core::CVarReadInt(r_draw_aabb) > 0) {
             const auto aabb_id = Core::CVarReadInt(r_draw_aabb_id);
             const auto& colliders = Physics::get_colliders();
-            for (std::size_t i = 0; i < colliders.complex.size(); ++i) {
-                const auto& [min_bound, max_bound] = colliders.simple[i];
+            const auto& cms = Physics::get_collider_meshes();
+            for (std::size_t i = 0; i < colliders.meshes.size(); ++i) {
+                const auto& [min_bound, max_bound] = cms.simple[colliders.meshes[i].index];
                 const auto& t = colliders.transforms[i];
                 if (aabb_id < 0 || i == aabb_id) {
                     DrawBox(
-                        t * glm::vec4(max_bound - min_bound, 1.0f),
+                        t * glm::vec4(0.5f * (max_bound + min_bound), 1.0f),
                         glm::quat(),
                         max_bound.x - min_bound.x,
                         max_bound.y - min_bound.y,
                         max_bound.z - min_bound.z,
                         glm::vec4(0,1,0,1),
-                        RenderMode::WireFrame,
+                        static_cast<RenderMode>(RenderMode::WireFrame | RenderMode::AlwaysOnTop),
                         2.0f
                     );
                 }

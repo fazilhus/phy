@@ -68,6 +68,11 @@ namespace Game {
         return false;
     }
 
+    std::ostream& operator<<(std::ostream& os, const glm::vec3& v) {
+        os << v.x << ' ' << v.y << ' ' << v.z;
+        return os;
+    }
+
     //------------------------------------------------------------------------------
     /**
     */
@@ -102,6 +107,10 @@ namespace Game {
             Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_5_physics.glb")),
             Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_6_physics.glb")),
         };
+
+        for (const auto& it : Physics::get_collider_meshes().simple) {
+            std::cout << it.min_bound << ' ' << it.max_bound << '\n';
+        }
 
         std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
 
@@ -207,10 +216,10 @@ namespace Game {
             Physics::HitInfo hit;
             if (p.intersect(r, hit)) { Debug::DrawBox(hit.pos, glm::quat(), 0.1f, glm::vec4(0.8f, 0.2f, 0.8f, 1.0f)); }
 
-            Debug::DrawAABB();
-
             // Store all drawcalls in the render device
             for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<2>(asteroid)); }
+
+            Debug::DrawAABB();
 
             // Execute the entire rendering pipeline
             RenderDevice::Render(this->window, dt);

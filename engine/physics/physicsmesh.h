@@ -78,19 +78,23 @@ namespace Physics {
     struct AABB {
         glm::vec3 min_bound{FLT_MAX}, max_bound{-FLT_MAX};
 
-        void grow(const glm::vec3& new_min_bound, const glm::vec3& new_max_bound);
+        void grow(const glm::vec3& p);
 
         bool intersect(const Ray& r, HitInfo& hit) const;
     };
 
-    struct Colliders {
+    struct ColliderMeshes {
         std::vector<AABB> simple;
         std::vector<ColliderMesh> complex;
-        std::vector<glm::mat4> transforms;
+    };
 
+    struct Colliders {
+        std::vector<ColliderMeshId> meshes;
+        std::vector<glm::mat4> transforms;
     };
 
     const Colliders& get_colliders();
+    const ColliderMeshes& get_collider_meshes();
 
     ColliderId create_collider(ColliderMeshId cm_id, const glm::mat4& t);
     ColliderMeshId load_collider_mesh(const std::string& filepath);

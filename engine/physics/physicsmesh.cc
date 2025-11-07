@@ -1,4 +1,6 @@
-﻿#include "config.h"
+﻿#include "physicsmesh.h"
+
+#include "config.h"
 #include "physicsmesh.h"
 
 #include "core/idpool.h"
@@ -11,7 +13,8 @@ namespace Physics {
     static Util::IdPool<ColliderId> collider_id_pool;
 
     static Colliders colliders;
-    static std::vector<ColliderMeshId> collider_meshes;
+    static ColliderMeshes collider_meshes;
+
 
     namespace Internal {
 
@@ -56,20 +59,19 @@ namespace Physics {
                     it.v0 - it.v1,
                     it.v0 - it.v2
                     );
+
             }
 
-            aabb->grow(
-                glm::vec3(vb_access.min[0], vb_access.min[1], vb_access.min[2]),
-                glm::vec3(vb_access.max[0], vb_access.max[1], vb_access.max[2])
-                );
+            aabb->grow(glm::vec3(vb_access.min[0], vb_access.min[1], vb_access.min[2]));
+            aabb->grow(glm::vec3(vb_access.max[0], vb_access.max[1], vb_access.max[2]));
         }
 
     }
 
 
-    void AABB::grow(const glm::vec3& new_min_bound, const glm::vec3& new_max_bound) {
-        this->min_bound = glm::min(this->min_bound, new_min_bound);
-        this->max_bound = glm::max(this->max_bound, new_max_bound);
+    void AABB::grow(const glm::vec3& p) {
+        this->min_bound = glm::min(this->min_bound, p);
+        this->max_bound = glm::max(this->max_bound, p);
     }
 
     bool AABB::intersect(const Ray& r, HitInfo& hit) const { return {}; }
@@ -79,11 +81,11 @@ namespace Physics {
         AABB* aabb;
         ColliderMesh* mesh;
         if (collider_mesh_id_pool.Allocate(mesh_id)) {
-            colliders.simple.emplace_back();
-            colliders.complex.emplace_back();
+            collider_meshes.simple.emplace_back();
+            collider_meshes.complex.emplace_back();
         }
-        aabb = &colliders.simple[mesh_id.index];
-        mesh = &colliders.complex[mesh_id.index];
+        aabb = &collider_meshes.simple[mesh_id.index];
+        mesh = &collider_meshes.complex[mesh_id.index];
 
         fx::gltf::Document doc;
         try {
@@ -134,17 +136,18 @@ namespace Physics {
         return mesh_id;
     }
 
-    const Colliders& get_colliders() {
-        return colliders;
-    }
+    const Colliders& get_colliders() { return colliders; }
+
+    const ColliderMeshes& get_collider_meshes() { return collider_meshes; }
 
     ColliderId create_collider(ColliderMeshId cm_id, const glm::mat4& t) {
         ColliderId id;
         if (collider_id_pool.Allocate(id)) {
-            collider_meshes.emplace_back(cm_id);
+            colliders.meshes.emplace_back(cm_id);
             colliders.transforms.emplace_back(t);
-        } else {
-            collider_meshes[id.index] = cm_id;
+        }
+        else {
+            colliders.meshes[id.index] = cm_id;
             colliders.transforms[id.index] = t;
         }
         return id;
