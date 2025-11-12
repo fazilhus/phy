@@ -174,7 +174,7 @@ namespace Debug {
     }
 
     void DrawRay(const Physics::Ray& ray, const glm::vec4& color, const float line_width) {
-        DrawLine(ray.orig, ray.orig + ray.dir * 10.0f, line_width, color, RenderMode::Normal);
+        DrawLine(ray.orig, ray.orig + ray.dir, line_width, color, RenderMode::Normal);
     }
 
     static Core::CVar* r_draw_aabb = nullptr;

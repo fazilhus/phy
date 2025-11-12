@@ -33,7 +33,7 @@ namespace Physics {
 
         void grow(const glm::vec3& p);
 
-        bool intersect(const Ray& r, HitInfo& hit) const;
+        bool intersect(const Ray& r, HitInfo& hit, const glm::mat4& trans, const glm::vec3& inv_dir) const;
     };
 
     struct ColliderMeshes {

@@ -46,9 +46,9 @@ namespace Render {
         const auto camera = CameraManager::GetCamera(CAMERA_MAIN);
         const auto mouse = Input::GetDefaultMouse();
         const auto ml = Math::norm_screen_pos(mouse->position, glm::vec2(1920.0f, 1080.0f));
-        auto world_point = camera->invViewProjection * glm::vec4(ml.x, -ml.y, 1, 1);
-        // world_point /= world_point.w;
-        // world_point = camera->invView * world_point;
+        auto world_point = camera->invProjection * glm::vec4(ml.x, -ml.y, 1, 1);
+        world_point /= world_point.w;
+        world_point = camera->invView * world_point;
         return Physics::Ray{glm::vec3(camera->invView[3]), Math::safe_normal(world_point)};
     }
 

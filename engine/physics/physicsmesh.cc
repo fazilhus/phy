@@ -1,6 +1,4 @@
-﻿#include "physicsmesh.h"
-
-#include "config.h"
+﻿#include "config.h"
 #include "physicsmesh.h"
 
 #include "plane.h"
@@ -104,25 +102,23 @@ namespace Physics {
         this->max_bound = glm::max(this->max_bound, p);
     }
 
-    bool AABB::intersect(const Ray& r, HitInfo& hit) const {
-        const auto df = glm::vec3(1) / r.orig;
+    bool AABB::intersect(const Ray& r, HitInfo& hit, const glm::mat4& trans, const glm::vec3& inv_dir) const {
+        const glm::vec3 wmi = trans * glm::vec4(this->min_bound, 1.0f);
+        const glm::vec3 wma = trans * glm::vec4(this->max_bound, 1.0f);
         auto tmin{0.0f}, tmax{FLT_MAX};
 
-        for (int i = 0; i < 3; ++i) {
-            float t1 = (this->min_bound[i] - r.dir[i]) * df[i];
-            float t2 = (this->max_bound[i] - r.dir[i]) * df[i];
-
+        for (std::size_t i = 0; i < 3; ++i) {
+            auto t1 = (wmi[i] - r.orig[i]) * inv_dir[i];
+            auto t2 = (wma[i] - r.orig[i]) * inv_dir[i];
+            if (inv_dir[i] < 0.0f) {
+                std::swap(t1, t2);
+            }
             tmin = Math::max(tmin, Math::min(t1, t2));
             tmax = Math::min(tmax, Math::max(t1, t2));
         }
 
-        if (tmin < tmax) {
-            if (tmin < 0) { hit.pos = r.orig + tmin * r.dir; }
-            else { hit.pos = r.orig + tmax * r.dir; }
-            hit.dist_sq = Math::len_sq(hit.pos);
-        }
-
-        return tmin < tmax;
+        hit.t = (tmin < tmax && tmax > 0.0f) ? tmin : tmax;
+        return tmin < tmax && tmax > 0.0f;
     }
 
     ColliderMeshId load_collider_mesh(const std::string& filepath) {
@@ -208,12 +204,13 @@ namespace Physics {
     }
 
     bool cast_ray(const Ray& ray, HitInfo& hit) {
+        const auto inv_dir = 1.0f / ray.dir;
         for (std::size_t i = 0; i < colliders.meshes.size(); ++i) {
             const auto c = ColliderId(i);
             const auto& aabb = collider_meshes.simple[colliders.meshes[i].index];
             HitInfo temp_hit;
-            if (aabb.intersect(ray, temp_hit)) {
-                if (temp_hit.dist_sq < hit.dist_sq) {
+            if (aabb.intersect(ray, temp_hit, colliders.transforms[i], inv_dir)) {
+                if (temp_hit.t < hit.t) {
                     hit = temp_hit;
                     hit.collider = c;
                 }

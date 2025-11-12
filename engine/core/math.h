@@ -26,7 +26,9 @@ namespace Math {
     }
 
     inline float min(const float a, const float b) { return a < b ? a : b; }
+    inline float min(const float a, const float b, const float c) { return min(min(a, b), c); }
 
     inline float max(const float a, const float b) { return a > b ? a : b; }
+    inline float max(const float a, const float b, const float c) { return max(max(a, b), c); }
 
 }
