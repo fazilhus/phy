@@ -26,6 +26,8 @@ namespace Physics {
         };
 
         std::vector<Primitive> primitives;
+
+        bool intersect(const Ray& r, HitInfo& hit) const;
     };
 
     struct AABB {

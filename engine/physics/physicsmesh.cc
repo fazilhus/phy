@@ -91,10 +91,21 @@ namespace Physics {
 
         if (t > epsilon) {
             hit.pos = r.orig + r.dir * t;
-            return true;
+        }
+        return true;
+    }
+
+    bool ColliderMesh::intersect(const Ray& r, HitInfo& hit) const {
+        for (const auto& p: this->primitives) {
+            for (const auto& t: p.triangles) {
+                HitInfo temp_hit;
+                if (t.intersect(r, temp_hit) && temp_hit.t < hit.t) {
+                    hit = temp_hit;
+                }
+            }
         }
 
-        return false;
+        return hit.hit();
     }
 
     void AABB::grow(const glm::vec3& p) {
@@ -110,9 +121,7 @@ namespace Physics {
         for (std::size_t i = 0; i < 3; ++i) {
             auto t1 = (wmi[i] - r.orig[i]) * inv_dir[i];
             auto t2 = (wma[i] - r.orig[i]) * inv_dir[i];
-            if (inv_dir[i] < 0.0f) {
-                std::swap(t1, t2);
-            }
+            if (inv_dir[i] < 0.0f) { std::swap(t1, t2); }
             tmin = Math::max(tmin, Math::min(t1, t2));
             tmax = Math::min(tmax, Math::max(t1, t2));
         }
@@ -204,19 +213,30 @@ namespace Physics {
     }
 
     bool cast_ray(const Ray& ray, HitInfo& hit) {
+        HitInfo best_hit;
         const auto inv_dir = 1.0f / ray.dir;
         for (std::size_t i = 0; i < colliders.meshes.size(); ++i) {
             const auto c = ColliderId(i);
-            const auto& aabb = collider_meshes.simple[colliders.meshes[i].index];
+            const auto cm = colliders.meshes[i];
+            const auto& aabb = collider_meshes.simple[cm.index];
             HitInfo temp_hit;
             if (aabb.intersect(ray, temp_hit, colliders.transforms[i], inv_dir)) {
-                if (temp_hit.t < hit.t) {
-                    hit = temp_hit;
-                    hit.collider = c;
+                if (temp_hit.t < best_hit.t) {
+                    best_hit = temp_hit;
+                    best_hit.collider = c;
+                    best_hit.mesh = cm;
                 }
             }
         }
 
+        if (!best_hit.hit()) { return false; }
+
+        const auto& cm = collider_meshes.complex[best_hit.mesh.index];
+        const auto t = colliders.transforms[best_hit.collider.index];
+        const auto inv_t = glm::inverse(t);
+        const auto model_ray = Ray(inv_t * glm::vec4(ray.orig, 1.0f), inv_t * glm::vec4(ray.dir, 1.0f));
+        cm.intersect(model_ray, hit);
+        hit.pos = t * glm::vec4(hit.pos, 1.0f);
         return hit.hit();
     }
 

@@ -30,6 +30,10 @@ namespace Debug {
         const glm::vec3& startPoint, const glm::vec3& endPoint, const float lineWidth, const glm::vec4& color,
         const RenderMode& renderModes = RenderMode::Normal
         );
+    void DrawTriangle(
+        const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec4& color, float line_width = 1.0f,
+        const RenderMode& render_mode = RenderMode::Normal
+        );
     void DrawQuad(
         const glm::mat4& transform, const glm::vec4& color, const RenderMode render_mode = RenderMode::Normal,
         const float line_width = 1.0f
@@ -68,6 +72,7 @@ namespace Debug {
     void DrawRay(const Physics::Ray& ray, const glm::vec4& color, const float line_width = 1.0f);
 
     void DrawAABB();
+    void DrawCMesh();
 
     void InitDebugRendering();
     void DispatchDebugDrawing();

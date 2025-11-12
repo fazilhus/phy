@@ -20,6 +20,7 @@
 namespace Debug {
     enum DebugShape {
         LINE,
+        TRIANGLE,
         QUAD,
         SPHERE,
         BOX,
@@ -43,6 +44,11 @@ namespace Debug {
         glm::vec3 endpoint = glm::vec3(1.0f);
         glm::vec4 startcolor = glm::vec4(1.0f);
         glm::vec4 endcolor = glm::vec4(1.0f);
+    };
+
+    struct TriangleCommand : public RenderCommand {
+        glm::vec3 ps[3] = {};
+        glm::vec4 color = glm::vec4(1.0f);
     };
 
     struct QuadCommand : public RenderCommand {
@@ -98,6 +104,21 @@ namespace Debug {
         const RenderMode& renderModes
         ) {
         DrawLine(startPoint, endPoint, lineWidth, color, color, renderModes);
+    }
+
+    void DrawTriangle(
+        const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec4& color, const float line_width,
+        const RenderMode& render_mode
+        ) {
+        const auto cmd = new TriangleCommand();
+        cmd->shape = DebugShape::TRIANGLE;
+        cmd->linewidth = line_width;
+        cmd->rendermode = render_mode;
+        cmd->color = color;
+        cmd->ps[0] = p1;
+        cmd->ps[1] = p2;
+        cmd->ps[2] = p3;
+        cmds.push(cmd);
     }
 
     void DrawQuad(
@@ -179,6 +200,7 @@ namespace Debug {
 
     static Core::CVar* r_draw_aabb = nullptr;
     static Core::CVar* r_draw_aabb_id = nullptr;
+    static Core::CVar* r_draw_cm_id = nullptr;
 
     void DrawAABB() {
 #if _DEBUG
@@ -202,6 +224,25 @@ namespace Debug {
                     );
                 }
             }
+        }
+#endif
+    }
+
+    void DrawCMesh() {
+#if _DEBUG
+        const auto cm_id = Core::CVarReadInt(r_draw_cm_id);
+        const auto& colliders = Physics::get_colliders();
+        const auto& cms = Physics::get_collider_meshes();
+        if (cm_id >= 0 && cm_id < colliders.meshes.size()) {
+            const auto& mesh = cms.complex[colliders.meshes[cm_id].index];
+            const auto& t = colliders.transforms[cm_id];
+            DrawBox(
+                t[3],
+                glm::quat(),
+                1.0f,
+                glm::vec4(0,1,1,1),
+                RenderMode::AlwaysOnTop
+            );
         }
 #endif
     }
@@ -432,6 +473,7 @@ namespace Debug {
 
         r_draw_aabb = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_aabb", "0");
         r_draw_aabb_id = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_aabb_id", "-1");
+        r_draw_cm_id = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_cm_id", "-1");
     }
 
     void RenderLine(RenderCommand* command) {

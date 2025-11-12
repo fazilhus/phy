@@ -188,6 +188,7 @@ namespace Game {
 
         Physics::Plane p(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
         Physics::Ray r(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
+        Physics::HitInfo hit;
 
         // game loop
         while (this->window->IsOpen()) {
@@ -207,7 +208,6 @@ namespace Game {
 
             if (kbd->held[Input::Key::LeftControl] && mouse->pressed[Input::Mouse::Button::LeftButton]) {
                 r = this->camera->SpawnRay();
-                Physics::HitInfo hit;
                 const auto aabb = Core::CVarGet("r_draw_aabb");
                 const auto aabb_id = Core::CVarGet("r_draw_aabb_id");
                 if (Physics::cast_ray(r, hit)) {
@@ -220,11 +220,20 @@ namespace Game {
                 }
             }
             Debug::DrawRay(r, glm::vec4(1, 0, 1, 1));
+            if (hit.hit()) {
+                Debug::DrawBox(
+                    hit.pos,
+                    glm::quat(),
+                    0.1f,
+                    glm::vec4(1,0,1,1)
+                );
+            }
 
             // Store all drawcalls in the render device
             for (auto const& asteroid: asteroids) { RenderDevice::Draw(std::get<0>(asteroid), std::get<2>(asteroid)); }
 
             Debug::DrawAABB();
+            Debug::DrawCMesh();
 
             // Execute the entire rendering pipeline
             RenderDevice::Render(this->window, dt);
@@ -284,6 +293,12 @@ namespace Game {
             int draw_aabb_id = Core::CVarReadInt(r_draw_aabb_id);
             if (ImGui::InputInt("Draw AABB by id", (int*)&draw_aabb_id))
                 Core::CVarWriteInt(r_draw_aabb_id, draw_aabb_id);
+
+            ImGui::Separator();
+            Core::CVar* r_draw_cm_id = Core::CVarGet("r_draw_cm_id");
+            int draw_cm_id = Core::CVarReadInt(r_draw_cm_id);
+            if (ImGui::InputInt("Draw Collision Mesh by id", (int*)&draw_cm_id))
+                Core::CVarWriteInt(r_draw_cm_id, draw_cm_id);
 
             ImGui::End();
 

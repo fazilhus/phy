@@ -58,6 +58,7 @@ namespace Physics {
         glm::vec3 norm = glm::vec3(0, 0, 0);
         float t = FLT_MAX;
         ColliderId collider = ColliderId::Invalid();
+        ColliderMeshId mesh = ColliderMeshId::Invalid();
 
         [[nodiscard]] bool hit() const {
             return t < FLT_MAX;
