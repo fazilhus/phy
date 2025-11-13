@@ -111,7 +111,7 @@ namespace Game {
         std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
 
         // Setup asteroids near
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
             std::get<0>(asteroid) = models[resourceIndex];
@@ -121,32 +121,32 @@ namespace Game {
                 Core::RandomFloatNTP() * span,
                 Core::RandomFloatNTP() * span
                 );
-            // glm::vec3 rotationAxis = normalize(translation);
-            // float rotation = translation.x;
-            glm::mat4 transform = /*glm::rotate(rotation, rotationAxis) **/ glm::translate(translation);
+            glm::vec3 rotationAxis = normalize(translation);
+            float rotation = translation.x;
+            glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
             std::get<1>(asteroid) = Physics::create_collider(colliders[resourceIndex], transform);
             std::get<2>(asteroid) = transform;
             asteroids.push_back(asteroid);
         }
 
         // Setup asteroids far
-        // for (int i = 0; i < 50; i++) {
-        //     std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
-        //     size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
-        //     std::get<0>(asteroid) = models[resourceIndex];
-        //     float span = 80.0f;
-        //     glm::vec3 translation = glm::vec3(
-        //         Core::RandomFloatNTP() * span,
-        //         Core::RandomFloatNTP() * span,
-        //         Core::RandomFloatNTP() * span
-        //         );
-        //     glm::vec3 rotationAxis = normalize(translation);
-        //     float rotation = translation.x;
-        //     glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
-        //     std::get<1>(asteroid) = Physics::create_collider(colliders[resourceIndex], transform);
-        //     std::get<2>(asteroid) = transform;
-        //     asteroids.push_back(asteroid);
-        // }
+        for (int i = 0; i < 10; i++) {
+            std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
+            size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
+            std::get<0>(asteroid) = models[resourceIndex];
+            float span = 80.0f;
+            glm::vec3 translation = glm::vec3(
+                Core::RandomFloatNTP() * span,
+                Core::RandomFloatNTP() * span,
+                Core::RandomFloatNTP() * span
+                );
+            glm::vec3 rotationAxis = normalize(translation);
+            float rotation = translation.x;
+            glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
+            std::get<1>(asteroid) = Physics::create_collider(colliders[resourceIndex], transform);
+            std::get<2>(asteroid) = transform;
+            asteroids.push_back(asteroid);
+        }
 
         // Setup skybox
         std::vector<std::string> skybox
@@ -210,13 +210,16 @@ namespace Game {
                 r = this->camera->SpawnRay();
                 const auto aabb = Core::CVarGet("r_draw_aabb");
                 const auto aabb_id = Core::CVarGet("r_draw_aabb_id");
+                const auto cm_id = Core::CVarGet("r_draw_cm_id");
                 if (Physics::cast_ray(r, hit)) {
                     Core::CVarWriteInt(aabb, 1);
                     Core::CVarWriteInt(aabb_id, hit.collider.index);
+                    Core::CVarWriteInt(cm_id, hit.collider.index);
                 }
                 else {
                     Core::CVarWriteInt(aabb, 0);
                     Core::CVarWriteInt(aabb_id, -1);
+                    Core::CVarWriteInt(cm_id, -1);
                 }
             }
             Debug::DrawRay(r, glm::vec4(1, 0, 1, 1));

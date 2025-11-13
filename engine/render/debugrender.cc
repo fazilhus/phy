@@ -47,7 +47,8 @@ namespace Debug {
     };
 
     struct TriangleCommand : public RenderCommand {
-        glm::vec3 ps[3] = {};
+        glm::vec3 ps[3];
+        glm::mat4 transform = glm::mat4();
         glm::vec4 color = glm::vec4(1.0f);
     };
 
@@ -107,8 +108,8 @@ namespace Debug {
     }
 
     void DrawTriangle(
-        const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec4& color, const float line_width,
-        const RenderMode& render_mode
+        const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::mat4& t,
+        const glm::vec4& color, const float line_width, const RenderMode& render_mode
         ) {
         const auto cmd = new TriangleCommand();
         cmd->shape = DebugShape::TRIANGLE;
@@ -118,6 +119,7 @@ namespace Debug {
         cmd->ps[0] = p1;
         cmd->ps[1] = p2;
         cmd->ps[2] = p3;
+        cmd->transform = t;
         cmds.push(cmd);
     }
 
@@ -143,7 +145,7 @@ namespace Debug {
     }
 
     void DrawQuad(
-        const glm::vec3& pos, const glm::quat& rot, const float scale, const glm::vec4& color, const float width,
+        const glm::vec3& pos, const glm::quat& rot, const glm::vec4& color, const float width,
         const float height, const RenderMode render_mode, const float line_width
         ) {
         const glm::mat4 t = glm::translate(pos) * static_cast<glm::mat4>(rot) * glm::scale(glm::vec3(width, height, 1.0f));
@@ -236,13 +238,17 @@ namespace Debug {
         if (cm_id >= 0 && cm_id < colliders.meshes.size()) {
             const auto& mesh = cms.complex[colliders.meshes[cm_id].index];
             const auto& t = colliders.transforms[cm_id];
-            DrawBox(
-                t[3],
-                glm::quat(),
-                1.0f,
-                glm::vec4(0,1,1,1),
-                RenderMode::AlwaysOnTop
-            );
+            for (const auto& p : mesh.primitives) {
+                for (const auto& tri : p.triangles) {
+                    Debug::DrawTriangle(
+                        tri.v0, tri.v1, tri.v2,
+                        t,
+                        glm::vec4(1,1,0,1),
+                        1.0f,
+                        (tri.selected) ? RenderMode::Normal : RenderMode::WireFrame
+                    );
+                }
+            }
         }
 #endif
     }
@@ -257,6 +263,7 @@ namespace Debug {
             fs::create_path_from_rel_s("shd/fs_debug.glsl").c_str()
             );
         Render::ShaderProgramId const progDebug = Render::ShaderResource::CompileShaderProgram({vsDebug, psDebug});
+        shaders[DebugShape::TRIANGLE] = Render::ShaderResource::GetProgramHandle(progDebug);
         shaders[DebugShape::QUAD] = Render::ShaderResource::GetProgramHandle(progDebug);
         shaders[DebugShape::BOX] = Render::ShaderResource::GetProgramHandle(progDebug);
 
@@ -297,6 +304,41 @@ namespace Debug {
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    void SetupTriangle() {
+        constexpr auto mesh_size = 9;
+        constexpr GLfloat mesh[mesh_size] = {
+            -0.5f, -0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            0.0f, 0.5f, 0.0f,
+        };
+        constexpr auto indices_size = 9;
+        constexpr int indices[indices_size] = {
+            0, 1, 2,
+
+            0, 1,
+            1, 2,
+            2, 0,
+        };
+
+        glGenVertexArrays(1, &vao[DebugShape::TRIANGLE]);
+        glBindVertexArray(vao[DebugShape::TRIANGLE]);
+
+        glGenBuffers(1, &vbo[DebugShape::TRIANGLE]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[DebugShape::TRIANGLE]);
+        glBufferData(GL_ARRAY_BUFFER, mesh_size * sizeof(GLfloat), mesh, GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, NULL);
+
+        glGenBuffers(1, &ib[DebugShape::TRIANGLE]);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib[DebugShape::TRIANGLE]);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(GLuint), indices, GL_STATIC_DRAW);
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     void SetupQuad() {
@@ -467,6 +509,7 @@ namespace Debug {
     void InitDebugRendering() {
         SetupShaders();
         SetupLine();
+        SetupTriangle();
         SetupQuad();
         SetupBox();
         SetupGrid();
@@ -518,6 +561,55 @@ namespace Debug {
             glDepthFunc(GL_LEQUAL);
             glDepthRange(0.0f, 1.0f);
         }
+    }
+
+    void RenderTriangle(RenderCommand* command) {
+        const auto cmd = static_cast<TriangleCommand*>(command);
+
+        constexpr auto mesh_size = 9;
+        const GLfloat mesh[mesh_size] = {
+            cmd->ps[0].x, cmd->ps[0].y, cmd->ps[0].z,
+            cmd->ps[1].x, cmd->ps[1].y, cmd->ps[1].z,
+            cmd->ps[2].x, cmd->ps[2].y, cmd->ps[2].z,
+        };
+
+        glUseProgram(shaders[DebugShape::TRIANGLE]);
+        glBindVertexArray(vao[DebugShape::TRIANGLE]);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[DebugShape::TRIANGLE]);
+        glBufferData(GL_ARRAY_BUFFER, mesh_size * sizeof(GLfloat), mesh, GL_STATIC_DRAW);
+
+        const GLuint loc = glGetUniformLocation(shaders[DebugShape::TRIANGLE], "color");
+        glUniform4fv(loc, 1, &cmd->color.x);
+
+        static GLuint model = glGetUniformLocation(shaders[DebugShape::TRIANGLE], "model");
+        static GLuint viewProjection = glGetUniformLocation(shaders[DebugShape::TRIANGLE], "viewProjection");
+        const Render::Camera* const mainCamera = Render::CameraManager::GetCamera(CAMERA_MAIN);
+        glUniformMatrix4fv(model, 1, GL_FALSE, &cmd->transform[0][0]);
+        glUniformMatrix4fv(viewProjection, 1, GL_FALSE, &mainCamera->viewProjection[0][0]);
+
+        glDisable(GL_CULL_FACE);
+        if ((cmd->rendermode & RenderMode::AlwaysOnTop) == RenderMode::AlwaysOnTop) {
+            glDepthFunc(GL_ALWAYS);
+            glDepthRange(0.0f, 0.01f);
+        }
+
+        if ((cmd->rendermode & RenderMode::WireFrame) == RenderMode::WireFrame) {
+            glPolygonMode(GL_FRONT, GL_LINE);
+            glLineWidth(cmd->linewidth);
+
+            glDrawElements(GL_LINES, 6, GL_UNSIGNED_INT, (void*)(3 * sizeof(GLuint)));
+            glPolygonMode(GL_FRONT, GL_FILL);
+        }
+        else { glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, NULL); }
+
+        if ((cmd->rendermode & RenderMode::AlwaysOnTop) == RenderMode::AlwaysOnTop) {
+            glDepthFunc(GL_LEQUAL);
+            glDepthRange(0.0f, 1.0f);
+        }
+        glEnable(GL_CULL_FACE);
+
+        glBindVertexArray(0);
     }
 
     void RenderQuad(RenderCommand* command) {
@@ -615,6 +707,10 @@ namespace Debug {
             switch (currentCommand->shape) {
             case DebugShape::LINE: {
                 RenderLine(currentCommand);
+                break;
+            }
+            case DebugShape::TRIANGLE: {
+                RenderTriangle(currentCommand);
                 break;
             }
             case DebugShape::QUAD: {

@@ -34,31 +34,32 @@ namespace Physics {
 
             const auto num_indices = ib_access.count;
             const auto ibuf = reinterpret_cast<const CompType*>(&ib.data[ib_access.byteOffset + ib_view.byteOffset]);
-            const auto vbuf = reinterpret_cast<const CompType*>(&vb.data[vb_access.byteOffset + vb_view.byteOffset]);
+            const auto vbuf = reinterpret_cast<const float*>(&vb.data[vb_access.byteOffset + vb_view.byteOffset]);
 
             const auto dim = (vb_access.type == fx::gltf::Accessor::Type::Vec3) ? 3 : 4;
-            for (std::size_t i = 0; i < num_indices; ++i) {
-                auto& it = mesh->primitives[prim_n].triangles[i];
-                it.v0 = glm::vec3(
+            for (auto i = 0; i < num_indices; i += 3) {
+                ColliderMesh::Triangle t;
+                t.v0 = glm::vec3(
                     vbuf[dim * ibuf[i]],
                     vbuf[dim * ibuf[i] + 1],
                     vbuf[dim * ibuf[i] + 2]
                     );
-                it.v1 = glm::vec3(
+                t.v1 = glm::vec3(
                     vbuf[dim * ibuf[i + 1]],
                     vbuf[dim * ibuf[i + 1] + 1],
                     vbuf[dim * ibuf[i + 1] + 2]
                     );
-                it.v2 = glm::vec3(
+                t.v2 = glm::vec3(
                     vbuf[dim * ibuf[i + 2]],
                     vbuf[dim * ibuf[i + 2] + 1],
                     vbuf[dim * ibuf[i + 2] + 2]
                     );
 
-                it.norm = glm::cross(
-                    it.v0 - it.v1,
-                    it.v0 - it.v2
+                t.norm = glm::cross(
+                    t.v0 - t.v1,
+                    t.v0 - t.v2
                     );
+                mesh->primitives[prim_n].triangles.emplace_back(t);
             }
 
             aabb->grow(glm::vec3(vb_access.min[0], vb_access.min[1], vb_access.min[2]));
@@ -89,18 +90,22 @@ namespace Physics {
 
         const auto t = inv_det * glm::dot(e2, se1n);
 
-        if (t > epsilon) {
-            hit.pos = r.orig + r.dir * t;
-        }
+        hit.t = t;
+        hit.pos = r.orig + r.dir * t;
+
         return true;
     }
 
     bool ColliderMesh::intersect(const Ray& r, HitInfo& hit) const {
-        for (const auto& p: this->primitives) {
-            for (const auto& t: p.triangles) {
+        for (std::size_t i = 0; i < this->primitives.size(); ++i) {
+            const auto& p = this->primitives[i];
+            for (std::size_t j = 0; j < p.triangles.size(); ++j) {
+                const auto& t = p.triangles[j];
                 HitInfo temp_hit;
                 if (t.intersect(r, temp_hit) && temp_hit.t < hit.t) {
                     hit = temp_hit;
+                    hit.prim_n = i;
+                    hit.tri_n = j;
                 }
             }
         }
@@ -118,7 +123,7 @@ namespace Physics {
         const glm::vec3 wma = trans * glm::vec4(this->max_bound, 1.0f);
         auto tmin{0.0f}, tmax{FLT_MAX};
 
-        for (std::size_t i = 0; i < 3; ++i) {
+        for (auto i = 0; i < 3; ++i) {
             auto t1 = (wmi[i] - r.orig[i]) * inv_dir[i];
             auto t2 = (wma[i] - r.orig[i]) * inv_dir[i];
             if (inv_dir[i] < 0.0f) { std::swap(t1, t2); }
@@ -160,7 +165,7 @@ namespace Physics {
         for (std::size_t i = 0; i < primitive_count; ++i) {
             const auto& prim = doc.meshes[0].primitives[i];
             const auto ib_accessor = doc.accessors[prim.indices];
-            mesh->primitives[i].triangles.resize(ib_accessor.count);
+            mesh->primitives[i].triangles.reserve(ib_accessor.count / 3);
         }
 
         for (std::size_t i = 0; i < primitive_count; ++i) {
@@ -231,12 +236,24 @@ namespace Physics {
 
         if (!best_hit.hit()) { return false; }
 
-        const auto& cm = collider_meshes.complex[best_hit.mesh.index];
+        auto& cm = collider_meshes.complex[best_hit.mesh.index];
         const auto t = colliders.transforms[best_hit.collider.index];
         const auto inv_t = glm::inverse(t);
         const auto model_ray = Ray(inv_t * glm::vec4(ray.orig, 1.0f), inv_t * glm::vec4(ray.dir, 1.0f));
+
+        for (auto& p : cm.primitives) {
+            for (auto& tri : p.triangles) {
+                tri.selected = false;
+            }
+        }
+
         cm.intersect(model_ray, hit);
+        hit.collider = best_hit.collider;
+        hit.mesh = best_hit.mesh;
         hit.pos = t * glm::vec4(hit.pos, 1.0f);
+        if (hit.hit()) {
+            cm.primitives[hit.prim_n].triangles[hit.tri_n].selected = true;
+        }
         return hit.hit();
     }
 

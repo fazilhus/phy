@@ -59,6 +59,8 @@ namespace Physics {
         float t = FLT_MAX;
         ColliderId collider = ColliderId::Invalid();
         ColliderMeshId mesh = ColliderMeshId::Invalid();
+        std::size_t prim_n;
+        std::size_t tri_n;
 
         [[nodiscard]] bool hit() const {
             return t < FLT_MAX;

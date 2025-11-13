@@ -17,6 +17,7 @@ namespace Physics {
             };
 
             glm::vec3 norm;
+            bool selected = false;
 
             bool intersect(const Ray& r, HitInfo& hit) const;
         };

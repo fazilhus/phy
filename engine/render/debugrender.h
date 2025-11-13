@@ -31,8 +31,8 @@ namespace Debug {
         const RenderMode& renderModes = RenderMode::Normal
         );
     void DrawTriangle(
-        const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec4& color, float line_width = 1.0f,
-        const RenderMode& render_mode = RenderMode::Normal
+        const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::mat4& t,
+        const glm::vec4& color, float line_width = 1.0f, const RenderMode& render_mode = RenderMode::Normal
         );
     void DrawQuad(
         const glm::mat4& transform, const glm::vec4& color, const RenderMode render_mode = RenderMode::Normal,
@@ -43,7 +43,7 @@ namespace Debug {
         const RenderMode render_mode = RenderMode::Normal, const float line_width = 1.0f
         );
     void DrawQuad(
-        const glm::vec3& pos, const glm::quat& rot, const float scale, const glm::vec4& color,
+        const glm::vec3& pos, const glm::quat& rot, const glm::vec4& color,
         const float width, const float height,
         const RenderMode render_mode = RenderMode::Normal, const float line_width = 1.0f
         );
