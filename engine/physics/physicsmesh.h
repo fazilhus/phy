@@ -16,6 +16,7 @@ namespace Physics {
                 };
             };
 
+            glm::vec3 center;
             glm::vec3 norm;
             bool selected = false;
 

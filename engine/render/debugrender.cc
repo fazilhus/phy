@@ -247,6 +247,11 @@ namespace Debug {
                         1.0f,
                         (tri.selected) ? RenderMode::Normal : RenderMode::WireFrame
                     );
+                    Debug::DrawLine(
+                        t * glm::vec4(tri.center, 1.0f),
+                        glm::vec3(t * glm::vec4(tri.center, 1.0f)) + 0.5f * Math::safe_normal(tri.norm),
+                        1.0f, glm::vec4(1)
+                        );
                 }
             }
         }

@@ -55,9 +55,10 @@ namespace Physics {
                     vbuf[dim * ibuf[i + 2] + 2]
                     );
 
+                t.center = (t.v0 + t.v1 + t.v2) / 3.0f;
                 t.norm = glm::cross(
-                    t.v0 - t.v1,
-                    t.v0 - t.v2
+                    t.v1 - t.v0,
+                    t.v2 - t.v0
                     );
                 mesh->primitives[prim_n].triangles.emplace_back(t);
             }
@@ -72,28 +73,32 @@ namespace Physics {
     bool ColliderMesh::Triangle::intersect(const Ray& r, HitInfo& hit) const {
         const auto e1 = this->v1 - this->v0;
         const auto e2 = this->v2 - this->v0;
-        const auto re2n = glm::cross(r.dir, e2);
+        const auto ray_cross_e2 = glm::cross(r.dir, e2);
+        const auto det = glm::dot(e1, ray_cross_e2);
 
-        const auto det = glm::dot(e1, re2n);
-        if (std::fabs(det) < epsilon) { return false; }
+        if (det < epsilon) {
+            return false;
+        }
 
         const auto inv_det = 1.0f / det;
         const auto s = r.orig - this->v0;
-        const auto u = inv_det * glm::dot(s, re2n);
+        const auto u = inv_det * glm::dot(s, ray_cross_e2);
+        if ((u < 0.0f && fabs(u) > epsilon) || (u > 1.0f && fabs(u - 1.0f) > epsilon)) {
+            return false;
+        }
 
-        if ((u < 0 && abs(u) > epsilon) || (u > 1 && abs(u - 1) > epsilon)) { return false; }
+        const auto s_cross_e1 = glm::cross(s, e1);
+        const auto v = inv_det * glm::dot(r.dir, s_cross_e1);
+        if ((v < 0.0f && fabs(v) > epsilon) || (u + v > 1.0f && fabs(u + v - 1.0f) > epsilon)) {
+            return false;
+        }
 
-        const auto se1n = glm::cross(s, e1);
-        const auto v = inv_det * glm::dot(r.dir, se1n);
-
-        if ((v < 0 && abs(v) > epsilon) || (u + v > 1 && abs(u + v - 1) > epsilon)) { return false; }
-
-        const auto t = inv_det * glm::dot(e2, se1n);
-
-        hit.t = t;
-        hit.pos = r.orig + r.dir * t;
-
-        return true;
+        hit.t = inv_det * glm::dot(e2, s_cross_e1);
+        if (hit.t > epsilon) {
+            hit.pos = r.orig + r.dir * s;
+            return true;
+        }
+        return false;
     }
 
     bool ColliderMesh::intersect(const Ray& r, HitInfo& hit) const {
@@ -102,10 +107,12 @@ namespace Physics {
             for (std::size_t j = 0; j < p.triangles.size(); ++j) {
                 const auto& t = p.triangles[j];
                 HitInfo temp_hit;
-                if (t.intersect(r, temp_hit) && temp_hit.t < hit.t) {
-                    hit = temp_hit;
-                    hit.prim_n = i;
-                    hit.tri_n = j;
+                if (t.intersect(r, temp_hit)) {
+                    if (temp_hit.t < hit.t) {
+                        hit = temp_hit;
+                        hit.prim_n = i;
+                        hit.tri_n = j;
+                    }
                 }
             }
         }
@@ -239,7 +246,7 @@ namespace Physics {
         auto& cm = collider_meshes.complex[best_hit.mesh.index];
         const auto t = colliders.transforms[best_hit.collider.index];
         const auto inv_t = glm::inverse(t);
-        const auto model_ray = Ray(inv_t * glm::vec4(ray.orig, 1.0f), inv_t * glm::vec4(ray.dir, 1.0f));
+        const auto model_ray = Ray(inv_t * glm::vec4(ray.orig, 1.0f), Math::safe_normal(glm::quat(inv_t) * glm::vec4(ray.dir, 1.0f)));
 
         for (auto& p : cm.primitives) {
             for (auto& tri : p.triangles) {
@@ -247,14 +254,15 @@ namespace Physics {
             }
         }
 
-        cm.intersect(model_ray, hit);
-        hit.collider = best_hit.collider;
-        hit.mesh = best_hit.mesh;
-        hit.pos = t * glm::vec4(hit.pos, 1.0f);
-        if (hit.hit()) {
+        if (cm.intersect(model_ray, hit)) {
+            hit.collider = best_hit.collider;
+            hit.mesh = best_hit.mesh;
+            hit.pos = t * glm::vec4(hit.pos, 1.0f);
             cm.primitives[hit.prim_n].triangles[hit.tri_n].selected = true;
+            return true;
         }
-        return hit.hit();
+
+        return false;
     }
 
     bool cast_ray(const glm::vec3& start, const glm::vec3& dir, HitInfo& hit) { return cast_ray(Ray(start, dir), hit); }

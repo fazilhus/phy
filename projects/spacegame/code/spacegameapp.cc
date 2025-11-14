@@ -121,9 +121,9 @@ namespace Game {
                 Core::RandomFloatNTP() * span,
                 Core::RandomFloatNTP() * span
                 );
-            glm::vec3 rotationAxis = normalize(translation);
-            float rotation = translation.x;
-            glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
+            // glm::vec3 rotationAxis = normalize(translation);
+            // float rotation = translation.x;
+            glm::mat4 transform = /*glm::rotate(rotation, rotationAxis) */ glm::translate(translation);
             std::get<1>(asteroid) = Physics::create_collider(colliders[resourceIndex], transform);
             std::get<2>(asteroid) = transform;
             asteroids.push_back(asteroid);
@@ -140,9 +140,9 @@ namespace Game {
                 Core::RandomFloatNTP() * span,
                 Core::RandomFloatNTP() * span
                 );
-            glm::vec3 rotationAxis = normalize(translation);
-            float rotation = translation.x;
-            glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
+            // glm::vec3 rotationAxis = normalize(translation);
+            // float rotation = translation.x;
+            glm::mat4 transform = /*glm::rotate(rotation, rotationAxis) */ glm::translate(translation);
             std::get<1>(asteroid) = Physics::create_collider(colliders[resourceIndex], transform);
             std::get<2>(asteroid) = transform;
             asteroids.push_back(asteroid);
@@ -223,6 +223,7 @@ namespace Game {
                 }
             }
             Debug::DrawRay(r, glm::vec4(1, 0, 1, 1));
+            hit = {};
             if (hit.hit()) {
                 Debug::DrawBox(
                     hit.pos,
