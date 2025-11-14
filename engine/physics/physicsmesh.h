@@ -45,19 +45,8 @@ namespace Physics {
         std::vector<ColliderMesh> complex;
     };
 
-    struct Colliders {
-        std::vector<ColliderMeshId> meshes;
-        std::vector<glm::mat4> transforms;
-    };
+    ColliderMeshes& get_collider_meshes();
 
-    const Colliders& get_colliders();
-    const ColliderMeshes& get_collider_meshes();
-
-    ColliderId create_collider(ColliderMeshId cm_id, const glm::mat4& t);
     ColliderMeshId load_collider_mesh(const std::string& filepath);
-    void set_transform(ColliderId collider, const glm::mat4& t);
-
-    bool cast_ray(const Ray& ray, HitInfo& hit);
-    bool cast_ray(const glm::vec3& start, const glm::vec3& dir, HitInfo& hit);
 
 } // namespace Physics

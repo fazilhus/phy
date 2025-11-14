@@ -2,7 +2,9 @@
 # physics
 #--------------------------------------------------------------------------
 SET(files_physics
+    physicsresource.h
     phy.h
+    phy.cc
     plane.h
     ray.h
     physicsmesh.h

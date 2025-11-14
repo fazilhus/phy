@@ -1,72 +1,34 @@
 ﻿#pragma once
-#include "vec3.hpp"
+#include "physicsresource.h"
 
 
 namespace Physics {
 
-    struct ColliderId {
-        uint32_t index: 22; // 4M concurrent colliders
-        uint32_t generation: 10; // 1024 generations per index
+    struct Ray;
 
-        constexpr static ColliderId Create(uint32_t id) {
-            ColliderId ret{id & 0x003FFFFF, (id & 0xFFC00000) >> 22};
-            return ret;
-        }
-
-        static ColliderId Create(uint32_t index, uint32_t generation) {
-            ColliderId ret;
-            ret.index = index;
-            ret.generation = generation;
-            return ret;
-        }
-
-        explicit constexpr operator uint32_t() const {
-            return ((generation << 22) & 0xFFC00000ul) + (index & 0x003FFFFFul);
-        }
-
-        static constexpr ColliderId Invalid() { return Create(0xFFFFFFFF); }
-        constexpr uint32_t HashCode() const { return index; }
-        const bool operator==(const ColliderId& rhs) const { return uint32_t(*this) == uint32_t(rhs); }
-        const bool operator!=(const ColliderId& rhs) const { return uint32_t(*this) != uint32_t(rhs); }
-        const bool operator<(const ColliderId& rhs) const { return index < rhs.index; }
-        const bool operator>(const ColliderId& rhs) const { return index > rhs.index; }
+    struct State {
+        glm::vec3 pos = glm::vec3(0), vel = glm::vec3(0);
     };
 
-    struct ColliderMeshId {
-        uint32_t index: 22; // 4M concurrent meshes
-        uint32_t generation: 10; // 1024 generations per index
-
-        constexpr static ColliderMeshId Create(uint32_t id) {
-            ColliderMeshId ret{id & 0x003FFFFF, (id & 0xFFC00000) >> 22};
-            return ret;
-        }
-
-        explicit constexpr operator uint32_t() const {
-            return ((generation << 22) & 0xFFC00000ul) + (index & 0x003FFFFFul);
-        }
-
-        static constexpr ColliderMeshId Invalid() { return Create(0xFFFFFFFF); }
-        constexpr uint32_t HashCode() const { return index; }
-        const bool operator==(const ColliderMeshId& rhs) const { return uint32_t(*this) == uint32_t(rhs); }
-        const bool operator!=(const ColliderMeshId& rhs) const { return uint32_t(*this) != uint32_t(rhs); }
-        const bool operator<(const ColliderMeshId& rhs) const { return index < rhs.index; }
-        const bool operator>(const ColliderMeshId& rhs) const { return index > rhs.index; }
+    struct Deriv {
+        glm::vec3 dx = glm::vec3(0), dv = glm::vec3(0);
     };
 
-    struct HitInfo {
-        glm::vec3 pos = glm::vec3(0, 0, 0);
-        glm::vec3 norm = glm::vec3(0, 0, 0);
-        float t = FLT_MAX;
-        ColliderId collider = ColliderId::Invalid();
-        ColliderMeshId mesh = ColliderMeshId::Invalid();
-        std::size_t prim_n;
-        std::size_t tri_n;
-
-        [[nodiscard]] bool hit() const {
-            return t < FLT_MAX;
-        }
+    struct Colliders {
+        std::vector<ColliderMeshId> meshes;
+        std::vector<glm::mat4> transforms;
+        std::vector<State> states;
+        std::vector<Deriv> derivs;
     };
 
-    constexpr auto epsilon = std::numeric_limits<float>::epsilon();
+    const Colliders& get_colliders();
+
+    ColliderId create_collider(ColliderMeshId cm_id, const glm::mat4& t);
+    void set_transform(ColliderId collider, const glm::mat4& t);
+
+    bool cast_ray(const Ray& ray, HitInfo& hit);
+    bool cast_ray(const glm::vec3& start, const glm::vec3& dir, HitInfo& hit);
+
+    void step();
 
 } // namespace Physics

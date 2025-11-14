@@ -242,7 +242,7 @@ namespace Debug {
                 for (const auto& tri : p.triangles) {
                     Debug::DrawTriangle(
                         tri.v0, tri.v1, tri.v2,
-                        t,
+                        t * glm::scale(glm::vec3(1.0f + 0.01f)),
                         glm::vec4(1,1,0,1),
                         1.0f,
                         (tri.selected) ? RenderMode::Normal : RenderMode::WireFrame
