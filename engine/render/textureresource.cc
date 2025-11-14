@@ -354,9 +354,11 @@ namespace Render {
             unsigned char* data = stbi_load(paths[i].c_str(), &w, &h, &nrChannels, 0);
             assert(data);
 
+            const auto format_i = (nrChannels == 3) ? (sRGB ? GL_SRGB : GL_RGB) : GL_RGBA;
+            const auto format = (nrChannels == 3) ? GL_RGB : GL_RGBA;
             glTexImage2D(
                 GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                0, sRGB ? GL_SRGB : GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+                0, format_i, w, h, 0, format, GL_UNSIGNED_BYTE, data
             );
             stbi_image_free(data);
         }
