@@ -93,16 +93,28 @@ namespace Physics {
 
     void add_force(ColliderId collider, const glm::vec3& f) {
         auto& state = colliders_.states[collider.index];
-        state.dyn.acc += f;
+        state.dyn.force_dir += f;
+        state.dyn.force_size += glm::length(f);
+    }
+
+    void add_impulse(ColliderId collider, const glm::vec3& i) {
+        auto& state = colliders_.states[collider.index];
+        state.dyn.impulse_dir += i;
+        state.dyn.impulse_size += glm::length(i);
     }
 
     void step(const float dt) {
         for (std::size_t i = 0; i < colliders_.states.size(); ++i) {
             auto& state = colliders_.states[i];
-            state.dyn.acc *= state.inv_mass;
-            state.dyn.vel += state.dyn.acc * dt;
+            const auto acc = Math::safe_normal(state.dyn.force_dir) * state.dyn.force_size * state.inv_mass;
+            const auto impulse = Math::safe_normal(state.dyn.impulse_dir) * state.dyn.impulse_size * state.inv_mass;
+            state.dyn.vel += impulse * dt + acc * dt;
             state.dyn.pos += state.dyn.vel * dt;
-            state.dyn.acc = glm::vec3(0);
+
+            state.dyn.force_dir = glm::vec3(0);
+            state.dyn.impulse_dir = glm::vec3(0);
+            state.dyn.force_size = 0.0f;
+            state.dyn.impulse_size = 0.0f;
 
             auto& t = colliders_.transforms[i];
             t = glm::translate(state.dyn.pos);

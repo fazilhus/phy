@@ -10,7 +10,10 @@ namespace Physics {
         struct Dyn {
             glm::vec3 pos = glm::vec3(0);
             glm::vec3 vel = glm::vec3(0);
-            glm::vec3 acc = glm::vec3(0);
+            glm::vec3 force_dir = glm::vec3(0);
+            glm::vec3 impulse_dir = glm::vec3(0);
+            float force_size = 0.0f;
+            float impulse_size = 0.0f;
         };
 
         float drag = 0.99f;
@@ -40,6 +43,7 @@ namespace Physics {
     bool cast_ray(const glm::vec3& start, const glm::vec3& dir, HitInfo& hit);
 
     void add_force(ColliderId collider, const glm::vec3& f);
+    void add_impulse(ColliderId collider, const glm::vec3& i);
     void step(float dt);
 
 } // namespace Physics

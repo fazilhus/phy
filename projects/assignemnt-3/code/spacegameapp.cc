@@ -207,10 +207,11 @@ namespace Game {
             this->window->Update();
             this->camera->Update(dt);
 
-            if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
+            for (std::size_t i = 0; i < Physics::get_colliders().states.size(); ++i) {
+                Physics::add_force(Physics::ColliderId(i), Physics::gravity);
+            }
 
-            Debug::DrawGrid();
-            Debug::DrawPlane(p, Debug::WireFrame);
+            if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
             if (kbd->held[Input::Key::LeftControl] && mouse->pressed[Input::Mouse::Button::LeftButton]) {
                 r = this->camera->SpawnRay();
@@ -221,7 +222,7 @@ namespace Game {
                     Core::CVarWriteInt(aabb, 1);
                     Core::CVarWriteInt(aabb_id, hit.collider.index);
                     Core::CVarWriteInt(cm_id, hit.collider.index);
-                    Physics::add_force(hit.collider, 100.0f * r.dir);
+                    Physics::add_impulse(hit.collider, 100.0f * r.dir);
                 }
                 else {
                     Core::CVarWriteInt(aabb, 0);
@@ -247,6 +248,8 @@ namespace Game {
                 RenderDevice::Draw(model, Physics::get_colliders().transforms[collider.index]);
             }
 
+            Debug::DrawGrid();
+            Debug::DrawPlane(p, Debug::WireFrame);
             Debug::DrawAABB();
             Debug::DrawCMesh();
 

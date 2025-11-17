@@ -203,9 +203,6 @@ namespace Game {
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
-            Debug::DrawGrid();
-            Debug::DrawPlane(p, Debug::WireFrame);
-
             if (kbd->held[Input::Key::LeftControl] && mouse->pressed[Input::Mouse::Button::LeftButton]) {
                 r = this->camera->SpawnRay();
                 const auto aabb = Core::CVarGet("r_draw_aabb");
@@ -238,6 +235,8 @@ namespace Game {
                 RenderDevice::Draw(model, Physics::get_colliders().transforms[collider.index]);
             }
 
+            Debug::DrawGrid();
+            Debug::DrawPlane(p, Debug::WireFrame);
             Debug::DrawAABB();
             Debug::DrawCMesh();
 
