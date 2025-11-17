@@ -203,6 +203,7 @@ namespace Debug {
     static Core::CVar* r_draw_aabb = nullptr;
     static Core::CVar* r_draw_aabb_id = nullptr;
     static Core::CVar* r_draw_cm_id = nullptr;
+    static Core::CVar* r_draw_cm_norm = nullptr;
 
     void DrawAABB() {
 #if _DEBUG
@@ -233,6 +234,7 @@ namespace Debug {
     void DrawCMesh() {
 #if _DEBUG
         const auto cm_id = Core::CVarReadInt(r_draw_cm_id);
+        const auto cm_norm = Core::CVarReadInt(r_draw_cm_norm);
         const auto& colliders = Physics::get_colliders();
         const auto& cms = Physics::get_collider_meshes();
         if (cm_id >= 0 && cm_id < colliders.meshes.size()) {
@@ -247,11 +249,13 @@ namespace Debug {
                         1.0f,
                         (tri.selected) ? RenderMode::Normal : RenderMode::WireFrame
                     );
-                    Debug::DrawLine(
-                        t * glm::vec4(tri.center, 1.0f),
-                        glm::vec3(t * glm::vec4(tri.center, 1.0f)) + 0.5f * Math::safe_normal(tri.norm),
-                        1.0f, glm::vec4(1)
-                        );
+                    if (cm_norm != 0) {
+                        Debug::DrawLine(
+                            t * glm::vec4(tri.center, 1.0f),
+                            glm::vec3(t * glm::vec4(tri.center, 1.0f)) + 0.5f * Math::safe_normal(tri.norm),
+                            1.0f, glm::vec4(1)
+                            );
+                    }
                 }
             }
         }
@@ -522,6 +526,7 @@ namespace Debug {
         r_draw_aabb = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_aabb", "0");
         r_draw_aabb_id = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_aabb_id", "-1");
         r_draw_cm_id = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_cm_id", "-1");
+        r_draw_cm_norm = Core::CVarCreate(Core::CVarType::CVar_Int, "r_draw_cm_norm", "0");
     }
 
     void RenderLine(RenderCommand* command) {

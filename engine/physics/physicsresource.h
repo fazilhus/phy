@@ -54,8 +54,10 @@ namespace Physics {
     };
 
     struct HitInfo {
-        glm::vec3 pos = glm::vec3(0, 0, 0);
-        glm::vec3 norm = glm::vec3(0, 0, 0);
+        glm::vec3 local_pos = glm::vec3(0);
+        glm::vec3 local_dir = glm::vec3(0);
+        glm::vec3 pos = glm::vec3(0);
+        glm::vec3 norm = glm::vec3(0);
         float t = FLT_MAX;
         ColliderId collider = ColliderId::Invalid();
         ColliderMeshId mesh = ColliderMeshId::Invalid();

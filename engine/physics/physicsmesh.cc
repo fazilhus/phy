@@ -34,7 +34,7 @@ namespace Physics {
             const auto vbuf = reinterpret_cast<const float*>(&vb.data[vb_access.byteOffset + vb_view.byteOffset]);
 
             const auto dim = (vb_access.type == fx::gltf::Accessor::Type::Vec3) ? 3 : 4;
-            for (auto i = 0; i < num_indices; i += 3) {
+            for (uint32_t i = 0; i < num_indices; i += 3) {
                 ColliderMesh::Triangle t;
                 t.v0 = glm::vec3(
                     vbuf[dim * ibuf[i]],
@@ -59,6 +59,12 @@ namespace Physics {
                     );
                 mesh->primitives[prim_n].triangles.emplace_back(t);
             }
+
+            for (uint32_t i = 0; i < vb_access.count; ++i) {
+                mesh->center += vbuf[i];
+            }
+
+            mesh->num_of_vertices += vb_access.count;
 
             aabb->grow(glm::vec3(vb_access.min[0], vb_access.min[1], vb_access.min[2]));
             aabb->grow(glm::vec3(vb_access.max[0], vb_access.max[1], vb_access.max[2]));
@@ -92,7 +98,8 @@ namespace Physics {
 
         hit.t = inv_det * glm::dot(e2, s_cross_e1);
         if (hit.t > epsilon) {
-            hit.pos = r.orig + r.dir * s;
+            hit.local_pos = r.orig + r.dir * s;
+            hit.local_dir = r.dir;
             return true;
         }
         return false;
@@ -195,6 +202,8 @@ namespace Physics {
                 break;
             }
         }
+
+        mesh->center /= static_cast<float>(mesh->num_of_vertices);
 
         return mesh_id;
     }

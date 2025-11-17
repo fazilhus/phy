@@ -16,17 +16,23 @@ namespace Physics {
     const Colliders& get_colliders() { return colliders_; }
     Colliders& colliders() { return colliders_; }
 
-    ColliderId create_collider(ColliderMeshId cm_id, const glm::mat4& t) {
+    ColliderId create_collider(ColliderMeshId cm_id, const glm::vec3& orig, const glm::mat4& t) {
         ColliderId id;
         if (collider_id_pool.Allocate(id)) {
             colliders_.meshes.emplace_back(cm_id);
             colliders_.transforms.emplace_back(t);
-            colliders_.states.emplace_back(State{.dyn = {.pos = t[3]}});
+            colliders_.states.emplace_back(State{
+                .dyn = {.pos = t[3]},
+                .orig = orig
+            });
         }
         else {
             colliders_.meshes[id.index] = cm_id;
             colliders_.transforms[id.index] = t;
-            colliders_.states[id.index] = State{.dyn = {.pos = t[3]}};
+            colliders_.states[id.index] = State{
+                .dyn = {.pos = t[3]},
+                .orig = orig
+            };
         }
         return id;
     }
@@ -75,7 +81,7 @@ namespace Physics {
                     best_hit = temp_hit;
                     best_hit.collider = it.collider;
                     best_hit.mesh = it.mesh;
-                    best_hit.pos = t * glm::vec4(best_hit.pos, 1.0f);
+                    best_hit.pos = t * glm::vec4(best_hit.local_pos, 1.0f);
                 }
             }
         }
@@ -91,16 +97,24 @@ namespace Physics {
 
     bool cast_ray(const glm::vec3& start, const glm::vec3& dir, HitInfo& hit) { return cast_ray(Ray(start, dir), hit); }
 
-    void add_force(ColliderId collider, const glm::vec3& f) {
+    void add_force(const ColliderId collider, const glm::vec3& f) {
         auto& state = colliders_.states[collider.index];
         state.dyn.force_dir += f;
         state.dyn.force_size += glm::length(f);
     }
 
-    void add_impulse(ColliderId collider, const glm::vec3& i) {
+    void add_impulse(const ColliderId collider, const glm::vec3& loc, const glm::vec3& dir) {
+        const auto& t = colliders_.transforms[collider.index];
         auto& state = colliders_.states[collider.index];
-        state.dyn.impulse_dir += i;
-        state.dyn.impulse_size += glm::length(i);
+        state.dyn.impulse_dir += dir;
+        state.dyn.impulse_size += glm::length(dir);
+
+        state.dyn.torque += glm::quat(
+            0.0f, glm::cross(
+                loc - state.orig,
+                dir
+                )
+            );
     }
 
     void step(const float dt) {
@@ -108,16 +122,20 @@ namespace Physics {
             auto& state = colliders_.states[i];
             const auto acc = Math::safe_normal(state.dyn.force_dir) * state.dyn.force_size * state.inv_mass;
             const auto impulse = Math::safe_normal(state.dyn.impulse_dir) * state.dyn.impulse_size * state.inv_mass;
-            state.dyn.vel += impulse * dt + acc * dt;
-            state.dyn.pos += state.dyn.vel * dt;
+            state.dyn.vel += impulse + acc * dt;
+            // state.dyn.pos += state.dyn.vel * dt;
+
+            state.dyn.angular_vel += state.dyn.torque * dt;
+            state.dyn.rot = glm::normalize(state.dyn.rot + 0.5f * state.dyn.angular_vel * state.dyn.rot * dt);
 
             state.dyn.force_dir = glm::vec3(0);
             state.dyn.impulse_dir = glm::vec3(0);
+            state.dyn.torque = glm::quat();
             state.dyn.force_size = 0.0f;
             state.dyn.impulse_size = 0.0f;
 
             auto& t = colliders_.transforms[i];
-            t = glm::translate(state.dyn.pos);
+            t = glm::translate(state.dyn.pos) * glm::rotate(glm::angle(state.dyn.rot), glm::axis(state.dyn.rot));
         }
     }
 

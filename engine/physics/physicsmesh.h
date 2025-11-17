@@ -27,6 +27,9 @@ namespace Physics {
             std::vector<Triangle> triangles;
         };
 
+        glm::vec3 center = glm::vec3(0);
+        std::size_t num_of_vertices = 0;
+
         std::vector<Primitive> primitives;
 
         bool intersect(const Ray& r, HitInfo& hit) const;

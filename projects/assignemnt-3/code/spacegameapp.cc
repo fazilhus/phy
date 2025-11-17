@@ -111,26 +111,28 @@ namespace Game {
         std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
 
         // Setup asteroids near
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
             std::get<0>(asteroid) = models[resourceIndex];
-            float span = 5.0f;
-            glm::vec3 translation = glm::vec3(
-                Core::RandomFloatNTP() * span,
-                Core::RandomFloatNTP() * span,
-                Core::RandomFloatNTP() * span
-                );
+            // float span = 5.0f;
+            // glm::vec3 translation = glm::vec3(
+            //     Core::RandomFloatNTP() * span,
+            //     Core::RandomFloatNTP() * span,
+            //     Core::RandomFloatNTP() * span
+            //     );
             // glm::vec3 rotationAxis = normalize(translation);
             // float rotation = translation.x;
-            glm::mat4 transform = /*glm::rotate(rotation, rotationAxis) */ glm::translate(translation);
-            std::get<1>(asteroid) = Physics::create_collider(colliders[resourceIndex], transform);
+            glm::mat4 transform = glm::mat4();//glm::rotate(rotation, rotationAxis) * glm::translate(translation);
+            std::get<1>(asteroid) = Physics::create_collider(
+                colliders[resourceIndex],
+                Physics::get_collider_meshes().complex[colliders[resourceIndex].index].center,
+                transform);
             std::get<2>(asteroid) = transform;
             Physics::colliders().states[std::get<1>(asteroid).index] = {
-                .dyn = {
-                    .pos = translation,
-                    .vel = glm::vec3(0, 0, 0),
-                }
+                // .dyn = {
+                //     .pos = translation,
+                // }
             };
             asteroids.push_back(asteroid);
         }
@@ -213,7 +215,7 @@ namespace Game {
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
-            if (kbd->held[Input::Key::LeftControl] && mouse->pressed[Input::Mouse::Button::LeftButton]) {
+            if (kbd->held[Input::Key::LeftControl] && mouse->held[Input::Mouse::Button::LeftButton]) {
                 r = this->camera->SpawnRay();
                 const auto aabb = Core::CVarGet("r_draw_aabb");
                 const auto aabb_id = Core::CVarGet("r_draw_aabb_id");
@@ -222,7 +224,7 @@ namespace Game {
                     Core::CVarWriteInt(aabb, 1);
                     Core::CVarWriteInt(aabb_id, hit.collider.index);
                     Core::CVarWriteInt(cm_id, hit.collider.index);
-                    Physics::add_impulse(hit.collider, 100.0f * r.dir);
+                    Physics::add_impulse(hit.collider, hit.local_pos, hit.local_dir);
                 }
                 else {
                     Core::CVarWriteInt(aabb, 0);
@@ -301,22 +303,25 @@ namespace Game {
             if (ImGui::InputInt("LightSphereId", (int*)&lightSphereId))
                 Core::CVarWriteInt(r_draw_light_sphere_id, lightSphereId);
 
-            ImGui::Separator();
+            ImGui::SeparatorText("Collision Debug Draw");
             Core::CVar* r_draw_aabb = Core::CVarGet("r_draw_aabb");
             int draw_aabb = Core::CVarReadInt(r_draw_aabb);
             if (ImGui::Checkbox("Draw AABBs", (bool*)&draw_aabb))
                 Core::CVarWriteInt(r_draw_aabb, draw_aabb);
+            Core::CVar* r_draw_cm_norm = Core::CVarGet("r_draw_cm_norm");
+            int draw_cm_norm = Core::CVarReadInt(r_draw_cm_norm);
+            if (ImGui::Checkbox("Draw Collision Mesh normals", (bool*)&draw_cm_norm))
+                Core::CVarWriteInt(r_draw_cm_norm, draw_cm_norm);
 
             Core::CVar* r_draw_aabb_id = Core::CVarGet("r_draw_aabb_id");
             int draw_aabb_id = Core::CVarReadInt(r_draw_aabb_id);
-            if (ImGui::InputInt("Draw AABB by id", (int*)&draw_aabb_id))
+            if (ImGui::InputInt("AABB id", (int*)&draw_aabb_id))
                 Core::CVarWriteInt(r_draw_aabb_id, draw_aabb_id);
-
-            ImGui::Separator();
             Core::CVar* r_draw_cm_id = Core::CVarGet("r_draw_cm_id");
             int draw_cm_id = Core::CVarReadInt(r_draw_cm_id);
-            if (ImGui::InputInt("Draw Collision Mesh by id", (int*)&draw_cm_id))
+            if (ImGui::InputInt("Collision Mesh id", (int*)&draw_cm_id))
                 Core::CVarWriteInt(r_draw_cm_id, draw_cm_id);
+
 
             ImGui::End();
 
