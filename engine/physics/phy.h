@@ -7,21 +7,31 @@ namespace Physics {
     struct Ray;
 
     struct State {
-        glm::vec3 pos = glm::vec3(0), vel = glm::vec3(0);
+        struct Dyn {
+            glm::vec3 pos = glm::vec3(0);
+            glm::vec3 vel = glm::vec3(0);
+            glm::vec3 acc = glm::vec3(0);
+        };
+
+        float drag = 0.99f;
+        float inv_mass = 1.0f;
+        Dyn dyn;
     };
 
     struct Deriv {
-        glm::vec3 dx = glm::vec3(0), dv = glm::vec3(0);
+        glm::vec3 dpos = glm::vec3(0), dvel = glm::vec3(0);
     };
 
     struct Colliders {
         std::vector<ColliderMeshId> meshes;
         std::vector<glm::mat4> transforms;
         std::vector<State> states;
-        std::vector<Deriv> derivs;
     };
 
+    constexpr auto gravity = glm::vec3(0, -0.1, 0);
+
     const Colliders& get_colliders();
+    Colliders& colliders();
 
     ColliderId create_collider(ColliderMeshId cm_id, const glm::mat4& t);
     void set_transform(ColliderId collider, const glm::mat4& t);
@@ -29,6 +39,7 @@ namespace Physics {
     bool cast_ray(const Ray& ray, HitInfo& hit);
     bool cast_ray(const glm::vec3& start, const glm::vec3& dir, HitInfo& hit);
 
-    void step();
+    void add_force(ColliderId collider, const glm::vec3& f);
+    void step(float dt);
 
 } // namespace Physics

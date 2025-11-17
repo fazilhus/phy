@@ -11,30 +11,29 @@
 namespace Physics {
 
     static Util::IdPool<ColliderId> collider_id_pool;
-    static Colliders colliders;
+    static Colliders colliders_;
 
-    const Colliders& get_colliders() { return colliders; }
+    const Colliders& get_colliders() { return colliders_; }
+    Colliders& colliders() { return colliders_; }
 
     ColliderId create_collider(ColliderMeshId cm_id, const glm::mat4& t) {
         ColliderId id;
         if (collider_id_pool.Allocate(id)) {
-            colliders.meshes.emplace_back(cm_id);
-            colliders.transforms.emplace_back(t);
-            colliders.states.emplace_back(t[3], glm::vec3());
-            colliders.derivs.emplace_back();
+            colliders_.meshes.emplace_back(cm_id);
+            colliders_.transforms.emplace_back(t);
+            colliders_.states.emplace_back(State{.dyn = {.pos = t[3]}});
         }
         else {
-            colliders.meshes[id.index] = cm_id;
-            colliders.transforms[id.index] = t;
-            colliders.states[id.index] = {t[3], {}};
-            colliders.derivs[id.index] = {};
+            colliders_.meshes[id.index] = cm_id;
+            colliders_.transforms[id.index] = t;
+            colliders_.states[id.index] = State{.dyn = {.pos = t[3]}};
         }
         return id;
     }
 
     void set_transform(const ColliderId collider, const glm::mat4& t) {
         assert(collider_id_pool.IsValid(collider));
-        colliders.transforms[collider.index] = t;
+        colliders_.transforms[collider.index] = t;
     }
 
     bool cast_ray(const Ray& ray, HitInfo& hit) {
@@ -92,14 +91,22 @@ namespace Physics {
 
     bool cast_ray(const glm::vec3& start, const glm::vec3& dir, HitInfo& hit) { return cast_ray(Ray(start, dir), hit); }
 
-    namespace Internal {
-
-        void eval(const std::size_t idx) {}
-
+    void add_force(ColliderId collider, const glm::vec3& f) {
+        auto& state = colliders_.states[collider.index];
+        state.dyn.acc += f;
     }
 
-    void step() {
+    void step(const float dt) {
+        for (std::size_t i = 0; i < colliders_.states.size(); ++i) {
+            auto& state = colliders_.states[i];
+            state.dyn.acc *= state.inv_mass;
+            state.dyn.vel += state.dyn.acc * dt;
+            state.dyn.pos += state.dyn.vel * dt;
+            state.dyn.acc = glm::vec3(0);
 
+            auto& t = colliders_.transforms[i];
+            t = glm::translate(state.dyn.pos);
+        }
     }
 
 
