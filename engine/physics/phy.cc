@@ -56,29 +56,35 @@ namespace Physics {
 
         std::ranges::sort(
             aabb_hits
-            , [](const HitInfo& lhs, const HitInfo& rhs)->bool {
-            return lhs.t < rhs.t;
-        });
+            , [](const HitInfo& lhs, const HitInfo& rhs)-> bool { return lhs.t < rhs.t; }
+            );
 
-        for (const auto it : aabb_hits) {
+        HitInfo best_hit;
+        for (const auto it: aabb_hits) {
             auto& cm = get_collider_meshes().complex[it.mesh.index];
             const auto t = colliders_.transforms[it.collider.index];
             const auto inv_t = glm::inverse(t);
-            const auto model_ray = Ray(inv_t * glm::vec4(ray.orig, 1.0f), Math::safe_normal(glm::quat(inv_t) * glm::vec4(ray.dir, 1.0f)));
+            const auto model_ray = Ray(
+                inv_t * glm::vec4(ray.orig, 1.0f), Math::safe_normal(glm::quat(inv_t) * glm::vec4(ray.dir, 1.0f))
+                );
 
-            for (auto& p : cm.primitives) {
-                for (auto& tri : p.triangles) {
-                    tri.selected = false;
+            for (auto& p: cm.primitives) { for (auto& tri: p.triangles) { tri.selected = false; } }
+
+            HitInfo temp_hit;
+            if (cm.intersect(model_ray, temp_hit)) {
+                if (temp_hit.t < best_hit.t) {
+                    best_hit = temp_hit;
+                    best_hit.collider = it.collider;
+                    best_hit.mesh = it.mesh;
+                    best_hit.pos = t * glm::vec4(best_hit.pos, 1.0f);
                 }
             }
+        }
 
-            if (cm.intersect(model_ray, hit)) {
-                hit.collider = it.collider;
-                hit.mesh = it.mesh;
-                hit.pos = t * glm::vec4(hit.pos, 1.0f);
-                cm.primitives[hit.prim_n].triangles[hit.tri_n].selected = true;
-                return true;
-            }
+        if (best_hit.hit()) {
+            hit = best_hit;
+            get_collider_meshes().complex[hit.mesh.index].primitives[hit.prim_n].triangles[hit.tri_n].selected = true;
+            return true;
         }
 
         return false;
