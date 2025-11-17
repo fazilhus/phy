@@ -38,41 +38,47 @@ namespace Physics {
     }
 
     bool cast_ray(const Ray& ray, HitInfo& hit) {
-        HitInfo best_hit;
+        std::vector<HitInfo> aabb_hits;
         const auto inv_dir = 1.0f / ray.dir;
-        for (std::size_t i = 0; i < colliders.meshes.size(); ++i) {
+        for (std::size_t i = 0; i < colliders_.meshes.size(); ++i) {
             const auto c = ColliderId(i);
-            const auto cm = colliders.meshes[i];
+            const auto cm = colliders_.meshes[i];
             const auto& aabb = get_collider_meshes().simple[cm.index];
             HitInfo temp_hit;
-            if (aabb.intersect(ray, temp_hit, colliders.transforms[i], inv_dir)) {
-                if (temp_hit.t < best_hit.t) {
-                    best_hit = temp_hit;
-                    best_hit.collider = c;
-                    best_hit.mesh = cm;
+            if (aabb.intersect(ray, temp_hit, colliders_.transforms[i], inv_dir)) {
+                aabb_hits.emplace_back(temp_hit);
+                aabb_hits.back().collider = c;
+                aabb_hits.back().mesh = cm;
+            }
+        }
+
+        if (aabb_hits.empty()) { return false; }
+
+        std::ranges::sort(
+            aabb_hits
+            , [](const HitInfo& lhs, const HitInfo& rhs)->bool {
+            return lhs.t < rhs.t;
+        });
+
+        for (const auto it : aabb_hits) {
+            auto& cm = get_collider_meshes().complex[it.mesh.index];
+            const auto t = colliders_.transforms[it.collider.index];
+            const auto inv_t = glm::inverse(t);
+            const auto model_ray = Ray(inv_t * glm::vec4(ray.orig, 1.0f), Math::safe_normal(glm::quat(inv_t) * glm::vec4(ray.dir, 1.0f)));
+
+            for (auto& p : cm.primitives) {
+                for (auto& tri : p.triangles) {
+                    tri.selected = false;
                 }
             }
-        }
 
-        if (!best_hit.hit()) { return false; }
-
-        auto& cm = get_collider_meshes().complex[best_hit.mesh.index];
-        const auto t = colliders.transforms[best_hit.collider.index];
-        const auto inv_t = glm::inverse(t);
-        const auto model_ray = Ray(inv_t * glm::vec4(ray.orig, 1.0f), Math::safe_normal(glm::quat(inv_t) * glm::vec4(ray.dir, 1.0f)));
-
-        for (auto& p : cm.primitives) {
-            for (auto& tri : p.triangles) {
-                tri.selected = false;
+            if (cm.intersect(model_ray, hit)) {
+                hit.collider = it.collider;
+                hit.mesh = it.mesh;
+                hit.pos = t * glm::vec4(hit.pos, 1.0f);
+                cm.primitives[hit.prim_n].triangles[hit.tri_n].selected = true;
+                return true;
             }
-        }
-
-        if (cm.intersect(model_ray, hit)) {
-            hit.collider = best_hit.collider;
-            hit.mesh = best_hit.mesh;
-            hit.pos = t * glm::vec4(hit.pos, 1.0f);
-            cm.primitives[hit.prim_n].triangles[hit.tri_n].selected = true;
-            return true;
         }
 
         return false;
