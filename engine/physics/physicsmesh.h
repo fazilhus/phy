@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <array>
+
 #include "phy.h"
 #include "ray.h"
 #include "vec3.hpp"
@@ -28,6 +30,10 @@ namespace Physics {
         };
 
         glm::vec3 center = glm::vec3(0);
+        float radius = 0.0f;
+        float width = 0.0f;
+        float height = 0.0f;
+        float depth = 0.0f;
         std::size_t num_of_vertices = 0;
 
         std::vector<Primitive> primitives;
@@ -39,9 +45,12 @@ namespace Physics {
         glm::vec3 min_bound{FLT_MAX}, max_bound{-FLT_MAX};
 
         void grow(const glm::vec3& p);
+        void grow_rot(const glm::mat4& t);
 
         bool intersect(const Ray& r, HitInfo& hit, const glm::mat4& trans, const glm::vec3& inv_dir) const;
     };
+
+    AABB rotate_aabb_affine(const AABB& orig, const glm::mat4& t);
 
     struct ColliderMeshes {
         std::vector<AABB> simple;

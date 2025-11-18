@@ -91,51 +91,62 @@ namespace Game {
         camera = new Render::DebugCamera(5.0f, 2.5f);
 
         // load all resources
-        ModelId models[6] = {
-            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_1.glb")),
-            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_2.glb")),
-            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_3.glb")),
-            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_4.glb")),
-            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_5.glb")),
-            LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_6.glb"))
-        };
-        Physics::ColliderMeshId colliders[6] = {
-            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_1_physics.glb")),
-            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_2_physics.glb")),
-            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_3_physics.glb")),
-            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_4_physics.glb")),
-            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_5_physics.glb")),
-            Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_6_physics.glb")),
-        };
+        // ModelId models[6] = {
+        //     LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_1.glb")),
+        //     LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_2.glb")),
+        //     LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_3.glb")),
+        //     LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_4.glb")),
+        //     LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_5.glb")),
+        //     LoadModel(fs::create_path_from_rel_s("assets/space/Asteroid_6.glb"))
+        // };
+        // Physics::ColliderMeshId colliders[6] = {
+        //     Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_1_physics.glb")),
+        //     Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_2_physics.glb")),
+        //     Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_3_physics.glb")),
+        //     Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_4_physics.glb")),
+        //     Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_5_physics.glb")),
+        //     Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/space/Asteroid_6_physics.glb")),
+        // };
 
-        std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
+        const auto cubemesh = LoadModel(fs::create_path_from_rel_s("assets/system/cube.glb"));
+        const auto cubecmesh = Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/system/cube.glb"));
+
+        std::tuple<ModelId, Physics::ColliderId> cube;
+        std::get<0>(cube) = cubemesh;
+        std::get<1>(cube) = Physics::create_collider(
+            cubecmesh,
+            Physics::get_collider_meshes().complex[cubecmesh.index].center,
+            glm::mat4(1.0f) * glm::translate(glm::vec3(0, 0, 2))
+            );
+
+        // std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
 
         // Setup asteroids near
-        for (int i = 0; i < 1; i++) {
-            std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
-            size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
-            std::get<0>(asteroid) = models[resourceIndex];
-            // float span = 5.0f;
-            // glm::vec3 translation = glm::vec3(
-            //     Core::RandomFloatNTP() * span,
-            //     Core::RandomFloatNTP() * span,
-            //     Core::RandomFloatNTP() * span
-            //     );
-            // glm::vec3 rotationAxis = normalize(translation);
-            // float rotation = translation.x;
-            glm::mat4 transform = glm::mat4();//glm::rotate(rotation, rotationAxis) * glm::translate(translation);
-            std::get<1>(asteroid) = Physics::create_collider(
-                colliders[resourceIndex],
-                Physics::get_collider_meshes().complex[colliders[resourceIndex].index].center,
-                transform);
-            std::get<2>(asteroid) = transform;
-            Physics::colliders().states[std::get<1>(asteroid).index] = {
-                // .dyn = {
-                //     .pos = translation,
-                // }
-            };
-            asteroids.push_back(asteroid);
-        }
+        // for (int i = 0; i < 1; i++) {
+        //     std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
+        //     size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
+        //     std::get<0>(asteroid) = models[resourceIndex];
+        //     float span = 5.0f;
+        //     glm::vec3 translation = glm::vec3(
+        //         Core::RandomFloatNTP() * span,
+        //         Core::RandomFloatNTP() * span,
+        //         Core::RandomFloatNTP() * span
+        //         );
+        //     glm::vec3 rotationAxis = normalize(translation);
+        //     float rotation = translation.x;
+        //     glm::mat4 transform = glm::rotate(rotation, rotationAxis) * glm::translate(translation);
+        //     std::get<1>(asteroid) = Physics::create_collider(
+        //         colliders[resourceIndex],
+        //         Physics::get_collider_meshes().complex[colliders[resourceIndex].index].center,
+        //         transform);
+        //     std::get<2>(asteroid) = transform;
+        //     Physics::colliders().states[std::get<1>(asteroid).index] = {
+        //         .dyn = {
+        //             .pos = translation,
+        //         }
+        //     };
+        //     asteroids.push_back(asteroid);
+        // }
 
         // Setup asteroids far
         // for (int i = 0; i < 10; i++) {
@@ -244,11 +255,14 @@ namespace Game {
             }
 
             Physics::step(dt);
+            Physics::update_aabbs();
 
             // Store all drawcalls in the render device
-            for (auto& [model, collider, _]: asteroids) {
-                RenderDevice::Draw(model, Physics::get_colliders().transforms[collider.index]);
-            }
+            // for (auto& [model, collider, _]: asteroids) {
+            //     RenderDevice::Draw(model, Physics::get_colliders().transforms[collider.index]);
+            // }
+            const auto& [model, collider] = cube;
+            RenderDevice::Draw(model, Physics::get_colliders().transforms[collider.index]);
 
             Debug::DrawGrid();
             Debug::DrawPlane(p, Debug::WireFrame);

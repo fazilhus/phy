@@ -210,17 +210,16 @@ namespace Debug {
         if (Core::CVarReadInt(r_draw_aabb) > 0) {
             const auto aabb_id = Core::CVarReadInt(r_draw_aabb_id);
             const auto& colliders = Physics::get_colliders();
-            const auto& cms = Physics::get_collider_meshes();
             for (std::size_t i = 0; i < colliders.meshes.size(); ++i) {
-                const auto& [min_bound, max_bound] = cms.simple[colliders.meshes[i].index];
+                const auto& aabb = colliders.aabbs[i];
                 const auto& t = colliders.transforms[i];
                 if (aabb_id < 0 || i == aabb_id) {
                     DrawBox(
-                        t * glm::vec4(0.5f * (max_bound + min_bound), 1.0f),
+                        t * glm::vec4(0.5f * (aabb.max_bound + aabb.min_bound), 1.0f),
                         glm::quat(),
-                        max_bound.x - min_bound.x,
-                        max_bound.y - min_bound.y,
-                        max_bound.z - min_bound.z,
+                        aabb.max_bound.x - aabb.min_bound.x,
+                        aabb.max_bound.y - aabb.min_bound.y,
+                        aabb.max_bound.z - aabb.min_bound.z,
                         glm::vec4(0,1,0,1),
                         static_cast<RenderMode>(RenderMode::WireFrame | RenderMode::AlwaysOnTop),
                         2.0f
@@ -240,6 +239,7 @@ namespace Debug {
         if (cm_id >= 0 && cm_id < colliders.meshes.size()) {
             const auto& mesh = cms.complex[colliders.meshes[cm_id].index];
             const auto& t = colliders.transforms[cm_id];
+            const auto& s = colliders.states[cm_id];
             for (const auto& p : mesh.primitives) {
                 for (const auto& tri : p.triangles) {
                     Debug::DrawTriangle(
@@ -258,6 +258,12 @@ namespace Debug {
                     }
                 }
             }
+            Debug::DrawLine(
+                s.dyn.pos - glm::vec3(s.dyn.angular_vel.x, s.dyn.angular_vel.y, s.dyn.angular_vel.z),
+                s.dyn.pos + glm::vec3(s.dyn.angular_vel.x, s.dyn.angular_vel.y, s.dyn.angular_vel.z),
+                2.0f,
+                glm::vec4(0.5,0,1,1)
+            );
         }
 #endif
     }

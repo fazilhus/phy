@@ -4,6 +4,7 @@
 #include "plane.h"
 #include "core/idpool.h"
 #include "core/math.h"
+#include "core/util.h"
 #include "fx/gltf.h"
 
 
@@ -60,14 +61,20 @@ namespace Physics {
                 mesh->primitives[prim_n].triangles.emplace_back(t);
             }
 
-            for (uint32_t i = 0; i < vb_access.count; ++i) {
-                mesh->center += vbuf[i];
-            }
+            for (uint32_t i = 0; i < vb_access.count; ++i) { mesh->center += vbuf[i]; }
 
             mesh->num_of_vertices += vb_access.count;
 
             aabb->grow(glm::vec3(vb_access.min[0], vb_access.min[1], vb_access.min[2]));
             aabb->grow(glm::vec3(vb_access.max[0], vb_access.max[1], vb_access.max[2]));
+
+            mesh->radius = Math::max(
+                Math::max(vb_access.max[0], vb_access.max[1], vb_access.max[2]),
+                Math::max(vb_access.min[0], vb_access.min[1], vb_access.min[2])
+                );
+            mesh->width = aabb->max_bound.x - aabb->min_bound.x;
+            mesh->height = aabb->max_bound.y - aabb->min_bound.y;
+            mesh->depth = aabb->max_bound.z - aabb->min_bound.z;
         }
 
     }
@@ -79,27 +86,21 @@ namespace Physics {
         const auto ray_cross_e2 = glm::cross(r.dir, e2);
         const auto det = glm::dot(e1, ray_cross_e2);
 
-        if (det < epsilon) {
-            return false;
-        }
+        if (det < epsilon) { return false; }
 
         const auto inv_det = 1.0f / det;
         const auto s = r.orig - this->v0;
         const auto u = inv_det * glm::dot(s, ray_cross_e2);
-        if ((u < 0.0f && fabs(u) > epsilon) || (u > 1.0f && fabs(u - 1.0f) > epsilon)) {
-            return false;
-        }
+        if ((u < 0.0f && fabs(u) > epsilon) || (u > 1.0f && fabs(u - 1.0f) > epsilon)) { return false; }
 
         const auto s_cross_e1 = glm::cross(s, e1);
         const auto v = inv_det * glm::dot(r.dir, s_cross_e1);
-        if ((v < 0.0f && fabs(v) > epsilon) || (u + v > 1.0f && fabs(u + v - 1.0f) > epsilon)) {
-            return false;
-        }
+        if ((v < 0.0f && fabs(v) > epsilon) || (u + v > 1.0f && fabs(u + v - 1.0f) > epsilon)) { return false; }
 
         hit.t = inv_det * glm::dot(e2, s_cross_e1);
         if (hit.t > epsilon) {
             hit.local_pos = r.orig + r.dir * s;
-            hit.local_dir = r.dir;
+            hit.local_norm = this->norm;
             return true;
         }
         return false;
@@ -129,6 +130,18 @@ namespace Physics {
         this->max_bound = glm::max(this->max_bound, p);
     }
 
+    void AABB::grow_rot(const glm::mat4& t) {
+        const auto tt = glm::transpose(t);
+        const auto xa = tt[0] * this->min_bound.x;
+        const auto xb = tt[0] * this->max_bound.x;
+        const auto ya = tt[1] * this->min_bound.y;
+        const auto yb = tt[1] * this->max_bound.y;
+        const auto za = tt[2] * this->min_bound.z;
+        const auto zb = tt[2] * this->max_bound.z;
+        this->min_bound = glm::vec3(glm::min(xa, xb) + glm::min(ya, yb) + glm::min(za, zb) + tt[3]);
+        this->max_bound = glm::vec3(glm::max(xa, xb) + glm::max(ya, yb) + glm::max(za, zb) + tt[3]);
+    }
+
     bool AABB::intersect(const Ray& r, HitInfo& hit, const glm::mat4& trans, const glm::vec3& inv_dir) const {
         const glm::vec3 wmi = trans * glm::vec4(this->min_bound, 1.0f);
         const glm::vec3 wma = trans * glm::vec4(this->max_bound, 1.0f);
@@ -144,6 +157,12 @@ namespace Physics {
 
         hit.t = (tmin < tmax && tmax > 0.0f) ? tmin : tmax;
         return tmin < tmax && tmax > 0.0f;
+    }
+
+    AABB rotate_aabb_affine(const AABB& orig, const glm::mat4& t) {
+        AABB ret{orig};
+        ret.grow_rot(t);
+        return ret;
     }
 
     ColliderMeshId load_collider_mesh(const std::string& filepath) {

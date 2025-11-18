@@ -14,6 +14,7 @@ SET(files_core
     idpool.h
     filesystem.h
     math.h
+    util.h
 )
 SOURCE_GROUP("core" FILES ${files_core})
 
