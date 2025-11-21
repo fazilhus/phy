@@ -113,13 +113,12 @@ namespace Physics {
 
     bool cast_ray(const Ray& ray, HitInfo& hit) {
         std::vector<HitInfo> aabb_hits;
-        const auto inv_dir = 1.0f / ray.dir;
         for (std::size_t i = 0; i < colliders_.meshes.size(); ++i) {
             const auto c = ColliderId(i);
             const auto cm = colliders_.meshes[i];
-            const auto& aabb = get_collider_meshes().simple[cm.index];
+            const auto& aabb = colliders_.aabbs[i];
             HitInfo temp_hit;
-            if (aabb.intersect(ray, temp_hit, colliders_.transforms[i], inv_dir)) {
+            if (aabb.intersect(ray, temp_hit)) {
                 aabb_hits.emplace_back(temp_hit);
                 aabb_hits.back().collider = c;
                 aabb_hits.back().mesh = cm;
@@ -177,12 +176,12 @@ namespace Physics {
     void add_impulse(const ColliderId collider, const glm::vec3& loc, const glm::vec3& dir) {
         auto& state = colliders_.states[collider.index];
         state.dyn.impulse_dir += dir;
-        state.dyn.impulse_size += 0.1f * glm::length(dir);
+        state.dyn.impulse_size += 0.01f * glm::length(dir);
 
         state.dyn.angular_m += glm::quat(
             0.0f, glm::cross(
                 loc - state.dyn.pos,
-                dir
+                0.5f * dir
                 )
             );
     }
@@ -190,14 +189,14 @@ namespace Physics {
     void step(const float dt) {
         for (std::size_t i = 0; i < colliders_.states.size(); ++i) {
             auto& state = colliders_.states[i];
+            const auto rotm = glm::mat3_cast(state.dyn.rot);
+            const auto inv_inertia_tensor = rotm * state.inv_inertia_shape * glm::transpose(rotm);
+
             const auto acc = Math::safe_normal(state.dyn.force_dir) * state.dyn.force_size * state.inv_mass;
             const auto impulse = Math::safe_normal(state.dyn.impulse_dir) * state.dyn.impulse_size * state.inv_mass;
             state.dyn.vel += impulse + acc * dt;
-            // state.dyn.pos += state.dyn.vel * dt;
+            state.dyn.pos += inv_inertia_tensor * state.dyn.vel * dt;
 
-
-            const auto rotm = glm::mat3_cast(state.dyn.rot);
-            const auto inv_inertia_tensor = rotm * state.inv_inertia_shape * glm::transpose(rotm);
             state.dyn.angular_vel += glm::quat(inv_inertia_tensor) * state.dyn.angular_m * dt;
             state.dyn.rot = glm::normalize(state.dyn.rot + state.dyn.angular_vel * state.dyn.rot * dt);
 

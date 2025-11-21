@@ -42,12 +42,19 @@ namespace Physics {
     };
 
     struct AABB {
-        glm::vec3 min_bound{FLT_MAX}, max_bound{-FLT_MAX};
+        union {
+            glm::vec3 corners[2];
+            struct {
+                glm::vec3 min_bound, max_bound;
+            };
+        };
+
+        explicit AABB() : min_bound(FLT_MAX), max_bound(-FLT_MAX) {}
 
         void grow(const glm::vec3& p);
         void grow_rot(const glm::mat4& t);
 
-        bool intersect(const Ray& r, HitInfo& hit, const glm::mat4& trans, const glm::vec3& inv_dir) const;
+        bool intersect(const Ray& r, HitInfo& hit) const;
     };
 
     AABB rotate_aabb_affine(const AABB& orig, const glm::mat4& t);

@@ -142,21 +142,18 @@ namespace Physics {
         this->max_bound = glm::vec3(glm::max(xa, xb) + glm::max(ya, yb) + glm::max(za, zb) + tt[3]);
     }
 
-    bool AABB::intersect(const Ray& r, HitInfo& hit, const glm::mat4& trans, const glm::vec3& inv_dir) const {
-        const glm::vec3 wmi = trans * glm::vec4(this->min_bound, 1.0f);
-        const glm::vec3 wma = trans * glm::vec4(this->max_bound, 1.0f);
+    bool AABB::intersect(const Ray& r, HitInfo& hit) const {
         auto tmin{0.0f}, tmax{FLT_MAX};
 
         for (auto i = 0; i < 3; ++i) {
-            auto t1 = (wmi[i] - r.orig[i]) * inv_dir[i];
-            auto t2 = (wma[i] - r.orig[i]) * inv_dir[i];
-            if (inv_dir[i] < 0.0f) { std::swap(t1, t2); }
-            tmin = Math::max(tmin, Math::min(t1, t2));
-            tmax = Math::min(tmax, Math::max(t1, t2));
+            const auto t1 = (this->min_bound[i] - r.orig[i]) * r.inv_dir[i];
+            const auto t2 = (this->max_bound[i] - r.orig[i]) * r.inv_dir[i];
+            tmin = Math::max(tmin, Math::min(t1, t2, tmax));
+            tmax = Math::min(tmax, Math::max(t1, t2, tmin));
         }
 
-        hit.t = (tmin < tmax && tmax > 0.0f) ? tmin : tmax;
-        return tmin < tmax && tmax > 0.0f;
+        hit.t = tmin;
+        return tmin <= tmax;
     }
 
     AABB rotate_aabb_affine(const AABB& orig, const glm::mat4& t) {
