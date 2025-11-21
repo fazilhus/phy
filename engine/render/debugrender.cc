@@ -252,7 +252,7 @@ namespace Debug {
                     if (cm_norm != 0) {
                         Debug::DrawLine(
                             t * glm::vec4(tri.center, 1.0f),
-                            glm::vec3(t * glm::vec4(tri.center, 1.0f)) + 0.5f * Math::safe_normal(tri.norm),
+                            glm::vec3(t * glm::vec4(tri.center, 1.0f)) + 0.5f * glm::vec3(glm::quat(t) * glm::vec4(Math::safe_normal(tri.norm), 1.0f)),
                             1.0f, glm::vec4(1)
                             );
                     }

@@ -220,9 +220,9 @@ namespace Game {
             this->window->Update();
             this->camera->Update(dt);
 
-            for (std::size_t i = 0; i < Physics::get_colliders().states.size(); ++i) {
-                Physics::add_force(Physics::ColliderId(i), Physics::gravity);
-            }
+            // for (std::size_t i = 0; i < Physics::get_colliders().states.size(); ++i) {
+            //     Physics::add_force(Physics::ColliderId(i), Physics::gravity);
+            // }
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
@@ -235,7 +235,7 @@ namespace Game {
                     Core::CVarWriteInt(aabb, 1);
                     Core::CVarWriteInt(aabb_id, hit.collider.index);
                     Core::CVarWriteInt(cm_id, hit.collider.index);
-                    Physics::add_impulse(hit.collider, hit.local_pos, hit.local_dir);
+                    Physics::add_impulse(hit.collider, hit.pos, 0.1f * r.dir);
                 }
                 else {
                     Core::CVarWriteInt(aabb, 0);

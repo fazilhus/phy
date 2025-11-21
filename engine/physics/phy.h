@@ -20,7 +20,7 @@ namespace Physics {
             glm::vec3 impulse_dir = glm::vec3(0);
             glm::quat rot = glm::quat();
             glm::quat angular_vel = glm::quat();
-            glm::quat torque = glm::quat();
+            glm::quat angular_m = glm::quat();
             float force_size = 0.0f;
             float impulse_size = 0.0f;
 
@@ -30,7 +30,7 @@ namespace Physics {
         };
 
         Dyn dyn;
-        glm::mat3 inertia_tensor = glm::mat3(0);
+        glm::mat3 inv_inertia_shape = glm::mat3(0);
         glm::vec3 orig = glm::vec3(0);
         float drag = 0.99f;
         float mass = 1.0f;
