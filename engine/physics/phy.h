@@ -16,13 +16,11 @@ namespace Physics {
         struct Dyn {
             glm::vec3 pos = glm::vec3(0);
             glm::vec3 vel = glm::vec3(0);
-            glm::vec3 force_dir = glm::vec3(0);
-            glm::vec3 impulse_dir = glm::vec3(0);
             glm::quat rot = glm::quat();
-            glm::quat angular_vel = glm::quat();
-            glm::quat angular_m = glm::quat();
-            float force_size = 0.0f;
-            float impulse_size = 0.0f;
+            glm::vec3 angular_vel = glm::vec3(0);
+            glm::vec3 force_accum = glm::vec3(0);
+            glm::vec3 impulse_accum = glm::vec3(0);
+            glm::vec3 torque_accum = glm::vec3(0);
 
             Dyn& set_pos(const glm::vec3& p);
             Dyn& set_vel(const glm::vec3& v);
