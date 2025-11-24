@@ -138,7 +138,7 @@ namespace Physics {
             const auto t = colliders_.transforms[it.collider.index];
             const auto inv_t = glm::inverse(t);
             const auto model_ray = Ray(
-                inv_t * glm::vec4(ray.orig, 1.0f), Math::safe_normal(glm::quat(inv_t) * ray.dir)
+                inv_t * glm::vec4(ray.orig, 1.0f), Math::safe_normal(inv_t * glm::vec4(ray.dir, 0.0f))
                 );
 
             for (auto& p: cm.primitives) { for (auto& tri: p.triangles) { tri.selected = false; } }
@@ -151,7 +151,7 @@ namespace Physics {
                     best_hit.mesh = it.mesh;
                     best_hit.local_dir = model_ray.dir;
                     best_hit.pos = t * glm::vec4(best_hit.local_pos, 1.0f);
-                    best_hit.norm = t * glm::vec4(best_hit.local_norm, 1.0f);
+                    best_hit.norm = t * glm::vec4(best_hit.local_norm, 0.0f);
                 }
             }
         }
@@ -176,9 +176,13 @@ namespace Physics {
         auto& state = colliders_.states[collider.index];
         state.dyn.impulse_accum += 0.01f * dir;
 
-        state.dyn.torque_accum += glm::cross(
-            loc - state.dyn.pos,
-            dir
+        const auto r = loc - state.dyn.pos;
+
+        state.dyn.torque_accum += glm::quat(
+            0.0f, glm::cross(
+                r,
+                dir
+                )
             );
     }
 
@@ -191,17 +195,16 @@ namespace Physics {
             const auto acc = state.dyn.force_accum * state.inv_mass;
             const auto impulse = state.dyn.impulse_accum * state.inv_mass;
             state.dyn.vel += impulse + acc * dt;
-            state.dyn.pos += state.dyn.vel * dt;
+            // state.dyn.pos += state.dyn.vel * dt;
 
-            state.dyn.angular_vel += inv_inertia_tensor * state.dyn.torque_accum * dt;
-            state.dyn.rot = glm::normalize(state.dyn.rot + 0.5f * glm::quat(0.0f, state.dyn.angular_vel) * state.dyn.rot * dt);
+            state.dyn.angular_vel += glm::quat(inv_inertia_tensor) * state.dyn.torque_accum * dt;
+            state.dyn.rot = glm::normalize(state.dyn.rot + 0.5f * state.dyn.angular_vel * state.dyn.rot * dt);
 
             state.dyn.force_accum = glm::vec3(0);
             state.dyn.impulse_accum = glm::vec3(0);
-            state.dyn.torque_accum = glm::vec3(0);
+            state.dyn.torque_accum = glm::quat();
 
-            auto& t = colliders_.transforms[i];
-            t = glm::translate(glm::mat4(1.0f), state.dyn.pos) * glm::mat4_cast(state.dyn.rot);
+            colliders_.transforms[i] = glm::translate(state.dyn.pos) * glm::mat4_cast(state.dyn.rot);
         }
     }
 

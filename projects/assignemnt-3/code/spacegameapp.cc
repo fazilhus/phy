@@ -113,10 +113,11 @@ namespace Game {
 
         std::tuple<ModelId, Physics::ColliderId> cube;
         std::get<0>(cube) = cubemesh;
+        const auto cube_transform = glm::translate(glm::vec3(0, 0, 2));
         std::get<1>(cube) = Physics::create_collider(
             cubecmesh,
             Physics::get_collider_meshes().complex[cubecmesh.index].center,
-            glm::mat4(1.0f) * glm::translate(glm::vec3(0, 0, 2))
+            cube_transform
             );
 
         // std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;

@@ -81,25 +81,25 @@ namespace Physics {
 
 
     bool ColliderMesh::Triangle::intersect(const Ray& r, HitInfo& hit) const {
-        const auto e1 = this->v1 - this->v0;
-        const auto e2 = this->v2 - this->v0;
-        const auto ray_cross_e2 = glm::cross(r.dir, e2);
-        const auto det = glm::dot(e1, ray_cross_e2);
+        const auto edge1 = this->v1 - this->v0;
+        const auto edge2 = this->v2 - this->v0;
+        const auto ray_cross_e2 = glm::cross(r.dir, edge2);
+        const auto det = glm::dot(edge1, ray_cross_e2);
 
         if (det < epsilon) { return false; }
 
         const auto inv_det = 1.0f / det;
-        const auto s = r.orig - this->v0;
-        const auto u = inv_det * glm::dot(s, ray_cross_e2);
+        const auto ray_to_v0 = r.orig - this->v0;
+        const auto u = inv_det * glm::dot(ray_to_v0, ray_cross_e2);
         if ((u < 0.0f && fabs(u) > epsilon) || (u > 1.0f && fabs(u - 1.0f) > epsilon)) { return false; }
 
-        const auto s_cross_e1 = glm::cross(s, e1);
-        const auto v = inv_det * glm::dot(r.dir, s_cross_e1);
+        const auto ray_to_v0_cross_e1 = glm::cross(ray_to_v0, edge1);
+        const auto v = inv_det * glm::dot(r.dir, ray_to_v0_cross_e1);
         if ((v < 0.0f && fabs(v) > epsilon) || (u + v > 1.0f && fabs(u + v - 1.0f) > epsilon)) { return false; }
 
-        hit.t = inv_det * glm::dot(e2, s_cross_e1);
+        hit.t = inv_det * glm::dot(edge2, ray_to_v0_cross_e1);
         if (hit.t > epsilon) {
-            hit.local_pos = r.orig + r.dir * s;
+            hit.local_pos = r.orig + r.dir * hit.t;
             hit.local_norm = this->norm;
             return true;
         }
@@ -131,15 +131,15 @@ namespace Physics {
     }
 
     void AABB::grow_rot(const glm::mat4& t) {
-        const auto tt = glm::transpose(t);
-        const auto xa = tt[0] * this->min_bound.x;
-        const auto xb = tt[0] * this->max_bound.x;
-        const auto ya = tt[1] * this->min_bound.y;
-        const auto yb = tt[1] * this->max_bound.y;
-        const auto za = tt[2] * this->min_bound.z;
-        const auto zb = tt[2] * this->max_bound.z;
-        this->min_bound = glm::vec3(glm::min(xa, xb) + glm::min(ya, yb) + glm::min(za, zb) + tt[3]);
-        this->max_bound = glm::vec3(glm::max(xa, xb) + glm::max(ya, yb) + glm::max(za, zb) + tt[3]);
+        // const auto tt = glm::transpose(t);
+        const auto xa = t[0] * this->min_bound.x;
+        const auto xb = t[0] * this->max_bound.x;
+        const auto ya = t[1] * this->min_bound.y;
+        const auto yb = t[1] * this->max_bound.y;
+        const auto za = t[2] * this->min_bound.z;
+        const auto zb = t[2] * this->max_bound.z;
+        this->min_bound = glm::vec3(glm::min(xa, xb) + glm::min(ya, yb) + glm::min(za, zb) + t[3]);
+        this->max_bound = glm::vec3(glm::max(xa, xb) + glm::max(ya, yb) + glm::max(za, zb) + t[3]);
     }
 
     bool AABB::intersect(const Ray& r, HitInfo& hit) const {

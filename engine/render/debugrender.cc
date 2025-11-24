@@ -215,13 +215,13 @@ namespace Debug {
                 const auto& t = colliders.transforms[i];
                 if (aabb_id < 0 || i == aabb_id) {
                     DrawBox(
-                        t * glm::vec4(0.5f * (aabb.max_bound + aabb.min_bound), 1.0f),
+                        0.5f * (aabb.max_bound + aabb.min_bound),
                         glm::quat(),
                         aabb.max_bound.x - aabb.min_bound.x,
                         aabb.max_bound.y - aabb.min_bound.y,
                         aabb.max_bound.z - aabb.min_bound.z,
                         glm::vec4(0,1,0,1),
-                        static_cast<RenderMode>(RenderMode::WireFrame | RenderMode::AlwaysOnTop),
+                        static_cast<RenderMode>(RenderMode::WireFrame /*| RenderMode::AlwaysOnTop*/),
                         2.0f
                     );
                 }
@@ -258,6 +258,7 @@ namespace Debug {
                     }
                 }
             }
+            // const auto omega = glm::quat(0.0f, s.dyn.angular_vel);
             Debug::DrawLine(
                 s.dyn.pos - glm::vec3(s.dyn.angular_vel.x, s.dyn.angular_vel.y, s.dyn.angular_vel.z),
                 s.dyn.pos + glm::vec3(s.dyn.angular_vel.x, s.dyn.angular_vel.y, s.dyn.angular_vel.z),
