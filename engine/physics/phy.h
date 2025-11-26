@@ -3,6 +3,7 @@
 
 
 namespace Physics {
+    struct Simplex;
 
     struct Ray;
 
@@ -68,5 +69,9 @@ namespace Physics {
     void add_impulse(ColliderId collider, const glm::vec3& loc, const glm::vec3& dir);
     void step(float dt);
     void update_aabbs();
+
+    glm::vec3 support(ColliderId a_id, ColliderId b_id, const glm::vec3& dir);
+
+    bool gjk(ColliderId a_id, ColliderId b_id, Simplex& out_simplex);
 
 } // namespace Physics

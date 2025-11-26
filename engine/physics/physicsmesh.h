@@ -34,11 +34,13 @@ namespace Physics {
         float width = 0.0f;
         float height = 0.0f;
         float depth = 0.0f;
-        std::size_t num_of_vertices = 0;
-
+        std::vector<glm::vec3> vertices;
         std::vector<Primitive> primitives;
 
+        [[nodiscard]] std::size_t num_of_vertices() const;
+
         bool intersect(const Ray& r, HitInfo& hit) const;
+        [[nodiscard]] glm::vec3 furthest_along(const glm::mat4& t, const glm::vec3& dir) const;
     };
 
     struct AABB {

@@ -61,9 +61,10 @@ namespace Physics {
                 mesh->primitives[prim_n].triangles.emplace_back(t);
             }
 
-            for (uint32_t i = 0; i < vb_access.count; ++i) { mesh->center += vbuf[i]; }
-
-            mesh->num_of_vertices += vb_access.count;
+            for (uint32_t i = 0; i < vb_access.count; ++i) {
+                mesh->vertices.emplace_back(vbuf[i]);
+                mesh->center += vbuf[i];
+            }
 
             aabb->grow(glm::vec3(vb_access.min[0], vb_access.min[1], vb_access.min[2]));
             aabb->grow(glm::vec3(vb_access.max[0], vb_access.max[1], vb_access.max[2]));
@@ -123,6 +124,24 @@ namespace Physics {
         }
 
         return hit.hit();
+    }
+
+    glm::vec3 ColliderMesh::furthest_along(const glm::mat4& t, const glm::vec3& dir) const {
+        glm::vec3 best_point{};
+        float best_dist{-FLT_MAX};
+        for (const auto& v : this->vertices) {
+            const auto point = glm::xyz(t * glm::vec4(v, 1.0f));
+            const auto dist = glm::dot(point, dir);
+            if (dist > best_dist) {
+                best_point = point;
+                best_dist = dist;
+            }
+        }
+        return best_point;
+    }
+
+    std::size_t ColliderMesh::num_of_vertices() const {
+        return this->vertices.size();
     }
 
     void AABB::grow(const glm::vec3& p) {
@@ -189,11 +208,15 @@ namespace Physics {
 
         const auto primitive_count = doc.meshes[0].primitives.size();
         mesh->primitives.resize(primitive_count);
+        std::size_t vertex_count{0};
         for (std::size_t i = 0; i < primitive_count; ++i) {
             const auto& prim = doc.meshes[0].primitives[i];
             const auto ib_accessor = doc.accessors[prim.indices];
+            const auto vb_accessor = doc.accessors[prim.attributes.find("POSITION")->second];
             mesh->primitives[i].triangles.reserve(ib_accessor.count / 3);
+            vertex_count += vb_accessor.count;
         }
+        mesh->vertices.resize(vertex_count);
 
         for (std::size_t i = 0; i < primitive_count; ++i) {
             const auto& prim = doc.meshes[0].primitives[i];
@@ -219,7 +242,7 @@ namespace Physics {
             }
         }
 
-        mesh->center /= static_cast<float>(mesh->num_of_vertices);
+        mesh->center /= static_cast<float>(mesh->num_of_vertices());
 
         return mesh_id;
     }

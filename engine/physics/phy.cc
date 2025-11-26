@@ -7,6 +7,7 @@
 #include "core/math.h"
 #include "core/util.h"
 #include "physics/ray.h"
+#include "physics/simplex.h"
 
 
 namespace Physics {
@@ -213,6 +214,31 @@ namespace Physics {
             const auto cmid = colliders_.meshes[i];
             auto& aabb = colliders_.aabbs[i];
             aabb = rotate_aabb_affine(get_collider_meshes().simple[cmid.index], colliders_.transforms[i]);
+        }
+    }
+
+    glm::vec3 support(const ColliderId a_id, const ColliderId b_id, const glm::vec3& dir) {
+        const auto& collider_a = get_collider_meshes().complex[colliders_.meshes[a_id.index].index];
+        const auto& collider_b = get_collider_meshes().complex[colliders_.meshes[b_id.index].index];
+        const auto& transform_a = colliders_.transforms[a_id.index];
+        const auto& transform_b = colliders_.transforms[b_id.index];
+        return collider_a.furthest_along(transform_a, dir) - collider_b.furthest_along(transform_b, -dir);
+    }
+
+    bool gjk(ColliderId a_id, ColliderId b_id, Simplex& out_simplex) {
+        auto s = support(a_id, b_id, glm::vec3(1, 0, 0));
+        out_simplex = {};
+        out_simplex.add_point(s);
+        auto dir = -s;
+        for (;;) {
+            s = support(a_id, b_id, dir);
+            if (glm::dot(s, dir) < epsilon) {
+                return false;
+            }
+            out_simplex.add_point(s);
+            if (next_simplex(out_simplex, dir)) {
+                return true;
+            }
         }
     }
 

@@ -9,6 +9,8 @@ SET(files_physics
     ray.h
     physicsmesh.h
     physicsmesh.cc
+    simplex.h
+    simplex.cc
 )
 SOURCE_GROUP("physics" FILES ${files_physics})
 
