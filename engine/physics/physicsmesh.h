@@ -57,6 +57,7 @@ namespace Physics {
         void grow_rot(const glm::mat4& t);
 
         bool intersect(const Ray& r, HitInfo& hit) const;
+        bool intersect(const AABB& other) const;
     };
 
     AABB rotate_aabb_affine(const AABB& orig, const glm::mat4& t);

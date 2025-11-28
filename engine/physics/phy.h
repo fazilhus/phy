@@ -59,7 +59,10 @@ namespace Physics {
     const Colliders& get_colliders();
     Colliders& colliders();
 
-    ColliderId create_collider(ColliderMeshId cm_id, const glm::vec3& orig, const glm::mat4& t, ShapeType type = ShapeType::Box);
+    ColliderId create_collider(
+        ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation,
+        ShapeType type = ShapeType::Box
+        );
     void set_transform(ColliderId collider, const glm::mat4& t);
 
     bool cast_ray(const Ray& ray, HitInfo& hit);
@@ -70,8 +73,13 @@ namespace Physics {
     void step(float dt);
     void update_aabbs();
 
-    glm::vec3 support(ColliderId a_id, ColliderId b_id, const glm::vec3& dir);
+    struct AABBPair {
+        ColliderId a, b;
+    };
 
+    std::vector<AABBPair>&& sort_and_sweep();
+
+    glm::vec3 support(ColliderId a_id, ColliderId b_id, const glm::vec3& dir);
     bool gjk(ColliderId a_id, ColliderId b_id, Simplex& out_simplex);
 
 } // namespace Physics

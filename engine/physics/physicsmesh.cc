@@ -175,6 +175,12 @@ namespace Physics {
         return tmin <= tmax;
     }
 
+    bool AABB::intersect(const AABB& other) const {
+        return (this->min_bound.x <= other.max_bound.x && this->max_bound.x >= other.min_bound.x) &&
+         (this->min_bound.y <= other.max_bound.y && this->max_bound.y >= other.min_bound.y) &&
+         (this->min_bound.z <= other.max_bound.z && this->max_bound.z >= other.min_bound.z);
+    }
+
     AABB rotate_aabb_affine(const AABB& orig, const glm::mat4& t) {
         AABB ret{orig};
         ret.grow_rot(t);

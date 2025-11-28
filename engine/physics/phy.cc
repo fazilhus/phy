@@ -14,6 +14,7 @@ namespace Physics {
 
     static Util::IdPool<ColliderId> collider_id_pool;
     static Colliders colliders_;
+    static auto sort_axis = 0;
 
     State::Dyn& State::Dyn::set_pos(const glm::vec3& p) {
         this->pos = p;
@@ -54,22 +55,27 @@ namespace Physics {
     const Colliders& get_colliders() { return colliders_; }
     Colliders& colliders() { return colliders_; }
 
+
     namespace Internal {
 
         glm::mat3 create_inertia_tensor(const ShapeType type, const float m, const ColliderMesh& cm) {
             switch (type) {
             case ShapeType::Box:
-                return glm::inverse(glm::mat3({
-                    {1.0f / 12.0f * m * (cm.height * cm.height + cm.depth * cm.depth), 0, 0},
-                    {0, 1.0f / 12.0f * m * (cm.width * cm.width + cm.depth * cm.depth), 0},
-                    {0, 0, 1.0f / 12.0f * m * (cm.width * cm.width + cm.height * cm.height)}
-                }));
-                // case ShapeType::Sphere:
-                //     return {
-                //         {},
-                //         {},
-                //         {}
-                //     };
+                return glm::inverse(
+                    glm::mat3(
+                        {
+                            {1.0f / 12.0f * m * (cm.height * cm.height + cm.depth * cm.depth), 0, 0},
+                            {0, 1.0f / 12.0f * m * (cm.width * cm.width + cm.depth * cm.depth), 0},
+                            {0, 0, 1.0f / 12.0f * m * (cm.width * cm.width + cm.height * cm.height)}
+                        }
+                        )
+                    );
+            // case ShapeType::Sphere:
+            //     return {
+            //         {},
+            //         {},
+            //         {}
+            //     };
             case ShapeType::Custom:
                 return {
                     {},
@@ -83,26 +89,35 @@ namespace Physics {
 
     }
 
-    ColliderId create_collider(ColliderMeshId cm_id, const glm::vec3& orig, const glm::mat4& t, const ShapeType type) {
+
+    ColliderId create_collider(
+        ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation,
+        ShapeType type
+        ) {
         ColliderId id;
+        const auto mat = glm::mat4(rotation) * glm::translate(translation);
         if (collider_id_pool.Allocate(id)) {
             colliders_.meshes.emplace_back(cm_id);
-            colliders_.transforms.emplace_back(t);
+            colliders_.transforms.emplace_back(mat);
             colliders_.aabbs.emplace_back(get_collider_meshes().simple[cm_id.index]);
             State s;
             s.set_mass(1.0f).set_drag(0.99f).set_orig(orig);
-            s.set_inertia_tensor(Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index]));
-            s.dyn.set_pos(t[3]);
+            s.set_inertia_tensor(
+                Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index])
+                );
+            s.dyn.set_pos(translation);
             colliders_.states.emplace_back(s);
         }
         else {
             colliders_.meshes[id.index] = cm_id;
-            colliders_.transforms[id.index] = t;
+            colliders_.transforms[id.index] = mat;
             colliders_.aabbs[id.index] = get_collider_meshes().simple[cm_id.index];
             auto& s = colliders_.states[id.index];
             s.set_mass(1.0f).set_drag(0.99f).set_orig(orig);
-            s.set_inertia_tensor(Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index]));
-            s.dyn.set_pos(t[3]);
+            s.set_inertia_tensor(
+                Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index])
+                );
+            s.dyn.set_pos(translation);
         }
         return id;
     }
@@ -217,6 +232,49 @@ namespace Physics {
         }
     }
 
+    std::vector<AABBPair>&& sort_and_sweep() {
+        std::vector<AABBPair> result;
+
+        std::vector<std::size_t> indices(colliders_.aabbs.size());
+        for (std::size_t i = 0; i < indices.size(); ++i) { indices[i] = i; }
+
+        std::ranges::sort(
+            indices,
+            [&](const std::size_t a, const std::size_t b)-> bool {
+                const auto min_a = colliders_.aabbs[a].min_bound[sort_axis];
+                const auto min_b = colliders_.aabbs[b].min_bound[sort_axis];
+                return min_a > min_b;
+            }
+            );
+
+        auto sum = glm::vec3(0), sum2 = glm::vec3(0), v = glm::vec3(0);
+        for (std::size_t ii = 0; ii < indices.size(); ++ii) {
+            const auto i = indices[ii];
+            const auto a = colliders_.aabbs[i];
+            const auto point = 0.5f * (a.min_bound + a.max_bound);
+            sum += point;
+            sum2 += point * point;
+
+            for (std::size_t jj = ii + 1; jj < indices.size(); ++jj) {
+                const auto j = indices[jj];
+                const auto b = colliders_.aabbs[j];
+                if (b.min_bound[sort_axis] > a.max_bound[sort_axis]) {
+                    break;
+                }
+                if (a.intersect(b)) {
+                    result.emplace_back(AABBPair{ColliderId(i), ColliderId(j)});
+                }
+            }
+
+            v = sum2 - sum * sum / static_cast<float>(indices.size());
+            sort_axis = 0;
+            if (v[1] > v[0]) sort_axis = 1;
+            if (v[2] > v[1]) sort_axis = 2;
+        }
+
+        return std::move(result);
+    }
+
     glm::vec3 support(const ColliderId a_id, const ColliderId b_id, const glm::vec3& dir) {
         const auto& collider_a = get_collider_meshes().complex[colliders_.meshes[a_id.index].index];
         const auto& collider_b = get_collider_meshes().complex[colliders_.meshes[b_id.index].index];
@@ -232,13 +290,9 @@ namespace Physics {
         auto dir = -s;
         for (;;) {
             s = support(a_id, b_id, dir);
-            if (glm::dot(s, dir) < epsilon) {
-                return false;
-            }
+            if (glm::dot(s, dir) < epsilon) { return false; }
             out_simplex.add_point(s);
-            if (next_simplex(out_simplex, dir)) {
-                return true;
-            }
+            if (next_simplex(out_simplex, dir)) { return true; }
         }
     }
 
