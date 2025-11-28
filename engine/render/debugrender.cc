@@ -15,6 +15,7 @@
 #include "core/cvar.h"
 #include "core/math.h"
 #include "physics/physicsmesh.h"
+#include "physics/simplex.h"
 
 
 namespace Debug {
@@ -267,6 +268,29 @@ namespace Debug {
             );
         }
 #endif
+    }
+
+    void DrawSimplex(const Physics::Simplex& s) {
+        const auto a = s.points[0];
+        const auto b = s.points[1];
+        const auto c = s.points[2];
+        const auto d = s.points[3];
+        Debug::DrawTriangle(
+            a, b, c, glm::mat4(1), glm::vec4(1, 0.5, 0.5, 1), 1,
+            static_cast<RenderMode>(RenderMode::WireFrame | RenderMode::AlwaysOnTop)
+            );
+        Debug::DrawTriangle(
+            a, d, b, glm::mat4(1), glm::vec4(1, 0.5, 0.5, 1), 1,
+            static_cast<RenderMode>(RenderMode::WireFrame | RenderMode::AlwaysOnTop)
+            );
+        Debug::DrawTriangle(
+            a, d, c, glm::mat4(1), glm::vec4(1, 0.5, 0.5, 1), 1,
+            static_cast<RenderMode>(RenderMode::WireFrame | RenderMode::AlwaysOnTop)
+            );
+        Debug::DrawTriangle(
+            b, c, d, glm::mat4(1), glm::vec4(1, 0.5, 0.5, 1), 1,
+            static_cast<RenderMode>(RenderMode::WireFrame | RenderMode::AlwaysOnTop)
+            );
     }
 
     void SetupShaders() {

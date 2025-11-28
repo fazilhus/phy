@@ -130,7 +130,7 @@ namespace Physics {
         glm::vec3 best_point{};
         float best_dist{-FLT_MAX};
         for (const auto& v : this->vertices) {
-            const auto point = glm::xyz(t * glm::vec4(v, 1.0f));
+            const auto point = glm::vec3(t * glm::vec4(v, 1.0f));
             const auto dist = glm::dot(point, dir);
             if (dist > best_dist) {
                 best_point = point;

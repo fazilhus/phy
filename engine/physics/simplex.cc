@@ -20,7 +20,7 @@ namespace Physics {
     }
 
     bool same_dir(const glm::vec3& a, const glm::vec3& b) {
-        return glm::dot(a, b) > epsilon;
+        return glm::dot(a, b) > 0;
     }
 
     bool simplex_line(Simplex& s, glm::vec3& dir) {
@@ -31,6 +31,7 @@ namespace Physics {
         const auto ao = -a;
 
         if (same_dir(ab, ao)) {
+            s = { a, b };
             dir = glm::cross(glm::cross(ab, ao), ab);
         }
         else {
@@ -57,6 +58,7 @@ namespace Physics {
                 dir = glm::cross(glm::cross(ac, ao), ac);
             } else {
                 if (same_dir(ab, ao)) {
+                    s = { a, b };
                     dir = glm::cross(glm::cross(ab, ao), ab);
                 }
                 else {
@@ -67,6 +69,7 @@ namespace Physics {
         } else {
             if (same_dir(ab, abc)) {
                 if (same_dir(ab, ao)) {
+                    s = { a, b };
                     dir = glm::cross(glm::cross(ab, ao), ab);
                 }
                 else {

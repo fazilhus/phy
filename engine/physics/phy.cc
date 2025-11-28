@@ -26,7 +26,7 @@ namespace Physics {
         return *this;
     }
 
-    State::Dyn& State::Dyn::set_rot(const glm::vec3& r) {
+    State::Dyn& State::Dyn::set_rot(const glm::quat& r) {
         this->rot = r;
         return *this;
     }
@@ -106,6 +106,7 @@ namespace Physics {
                 Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index])
                 );
             s.dyn.set_pos(translation);
+            s.dyn.set_rot(rotation);
             colliders_.states.emplace_back(s);
         }
         else {
@@ -118,6 +119,7 @@ namespace Physics {
                 Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index])
                 );
             s.dyn.set_pos(translation);
+            s.dyn.set_rot(rotation);
         }
         return id;
     }
@@ -232,9 +234,8 @@ namespace Physics {
         }
     }
 
-    std::vector<AABBPair>&& sort_and_sweep() {
-        std::vector<AABBPair> result;
-
+    void sort_and_sweep(std::vector<AABBPair>& aabb_pairs) {
+        aabb_pairs.clear();
         std::vector<std::size_t> indices(colliders_.aabbs.size());
         for (std::size_t i = 0; i < indices.size(); ++i) { indices[i] = i; }
 
@@ -262,7 +263,7 @@ namespace Physics {
                     break;
                 }
                 if (a.intersect(b)) {
-                    result.emplace_back(AABBPair{ColliderId(i), ColliderId(j)});
+                    aabb_pairs.emplace_back(AABBPair{ColliderId(i), ColliderId(j)});
                 }
             }
 
@@ -271,8 +272,6 @@ namespace Physics {
             if (v[1] > v[0]) sort_axis = 1;
             if (v[2] > v[1]) sort_axis = 2;
         }
-
-        return std::move(result);
     }
 
     glm::vec3 support(const ColliderId a_id, const ColliderId b_id, const glm::vec3& dir) {
@@ -283,14 +282,14 @@ namespace Physics {
         return collider_a.furthest_along(transform_a, dir) - collider_b.furthest_along(transform_b, -dir);
     }
 
-    bool gjk(ColliderId a_id, ColliderId b_id, Simplex& out_simplex) {
+    bool gjk(const ColliderId a_id, const ColliderId b_id, Simplex& out_simplex) {
         auto s = support(a_id, b_id, glm::vec3(1, 0, 0));
         out_simplex = {};
         out_simplex.add_point(s);
         auto dir = -s;
         for (;;) {
             s = support(a_id, b_id, dir);
-            if (glm::dot(s, dir) < epsilon) { return false; }
+            if (glm::dot(s, dir) < 0) { return false; }
             out_simplex.add_point(s);
             if (next_simplex(out_simplex, dir)) { return true; }
         }

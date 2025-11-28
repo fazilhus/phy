@@ -158,6 +158,7 @@ namespace Game {
         Physics::Plane p(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
         Physics::Ray r(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
         Physics::HitInfo hit;
+        std::vector<Physics::AABBPair> aabb_collisions;
 
         // game loop
         while (this->window->IsOpen()) {
@@ -204,20 +205,21 @@ namespace Game {
                 );
             }
 
-            Physics::sort_and_sweep();
+            Physics::sort_and_sweep(aabb_collisions);
+            Physics::Simplex s{};
+            for (const auto& it : aabb_collisions) {
+                if (Physics::gjk(it.a, it.b, s)) {
+                    Debug::DrawSimplex(s);
+                }
+                s = {};
+            }
             Physics::step(dt);
             Physics::update_aabbs();
 
             // Store all drawcalls in the render device
-            // for (auto& [model, collider, _]: asteroids) {
-            //     RenderDevice::Draw(model, Physics::get_colliders().transforms[collider.index]);
-            // }
             for (auto& [model, collider] : cubes) {
                 RenderDevice::Draw(model, Physics::get_colliders().transforms[collider.index]);
             }
-
-            // Physics::Simplex s{};
-            // Physics::gjk(std::get<1>(cubes[0]), std::get<1>(cubes[1]), s);
 
             Debug::DrawGrid();
             Debug::DrawPlane(p, Debug::WireFrame);

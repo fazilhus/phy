@@ -73,6 +73,7 @@ namespace Debug {
 
     void DrawAABB();
     void DrawCMesh();
+    void DrawSimplex(const Physics::Simplex& s);
 
     void InitDebugRendering();
     void DispatchDebugDrawing();

@@ -25,7 +25,7 @@ namespace Physics {
 
             Dyn& set_pos(const glm::vec3& p);
             Dyn& set_vel(const glm::vec3& v);
-            Dyn& set_rot(const glm::vec3& r);
+            Dyn& set_rot(const glm::quat& r);
         };
 
         Dyn dyn;
@@ -77,7 +77,7 @@ namespace Physics {
         ColliderId a, b;
     };
 
-    std::vector<AABBPair>&& sort_and_sweep();
+    void sort_and_sweep(std::vector<AABBPair>& aabb_pairs);
 
     glm::vec3 support(ColliderId a_id, ColliderId b_id, const glm::vec3& dir);
     bool gjk(ColliderId a_id, ColliderId b_id, Simplex& out_simplex);

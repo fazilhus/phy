@@ -13,9 +13,6 @@ namespace Physics {
         Simplex& operator=(std::initializer_list<glm::vec3> init);
 
         void add_point(const glm::vec3& point);
-
-        // auto begin() const { return this->points.begin(); }
-        // auto end() const { return this->points.end() - (4 - this->size); }
     };
 
     bool next_simplex(Simplex& s, glm::vec3& dir);
