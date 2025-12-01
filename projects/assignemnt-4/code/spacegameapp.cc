@@ -74,10 +74,13 @@ namespace Game {
         return os;
     }
 
+    static Core::CVar* s_stop_sim = nullptr;
+
     //------------------------------------------------------------------------------
     /**
     */
     void SpaceGameApp::Run() {
+        s_stop_sim = Core::CVarCreate(Core::CVar_Int, "s_stop_sim", "0");
         int w;
         int h;
         this->window->GetSize(w, h);
@@ -96,22 +99,50 @@ namespace Game {
         const auto cubecmesh = Physics::load_collider_mesh(fs::create_path_from_rel_s("assets/system/cube.glb"));
 
         std::vector<std::tuple<ModelId, Physics::ColliderId>> cubes;
-        for (std::size_t i = 0; i < 10; ++i) {
+        // for (std::size_t i = 0; i < 10; ++i) {
+        //     std::tuple<ModelId, Physics::ColliderId> cube;
+        //     std::get<0>(cube) = cubemesh;
+        //     constexpr auto span = 10.0f;
+        //     const auto translation = glm::vec3(
+        //         Core::RandomFloatNTP() * span,
+        //         Core::RandomFloatNTP() * span,
+        //         Core::RandomFloatNTP() * span
+        //         );
+        //     const auto rotationAxis = normalize(translation);
+        //     const auto rotation = glm::quat(translation.x, rotationAxis);
+        //     std::get<1>(cube) = Physics::create_collider(
+        //         cubecmesh,
+        //         Physics::get_collider_meshes().complex[cubecmesh.index].center,
+        //         translation,
+        //         rotation
+        //         );
+        //     cubes.emplace_back(cube);
+        // }
+        {
             std::tuple<ModelId, Physics::ColliderId> cube;
             std::get<0>(cube) = cubemesh;
-            constexpr auto span = 10.0f;
-            const auto translation = glm::vec3(
-                Core::RandomFloatNTP() * span,
-                Core::RandomFloatNTP() * span,
-                Core::RandomFloatNTP() * span
-                );
-            const auto rotationAxis = normalize(translation);
-            const auto rotation = glm::quat(translation.x, rotationAxis);
+            constexpr auto translation = glm::vec3(3, 0, 2);
+            const auto rotationAxis = normalize(glm::vec3(1, 1, 1));
+            const auto rotation = glm::quat(1.0f, rotationAxis);
             std::get<1>(cube) = Physics::create_collider(
                 cubecmesh,
                 Physics::get_collider_meshes().complex[cubecmesh.index].center,
                 translation,
                 rotation
+                );
+            cubes.emplace_back(cube);
+        }
+        {
+            std::tuple<ModelId, Physics::ColliderId> cube;
+            std::get<0>(cube) = cubemesh;
+            constexpr auto translation = glm::vec3(-3, 0, 2);
+            // const auto rotationAxis = normalize(glm::vec3(-1, 1, 1));
+            // const auto rotation = glm::quat(1.0f, rotationAxis);
+            std::get<1>(cube) = Physics::create_collider(
+                cubecmesh,
+                Physics::get_collider_meshes().complex[cubecmesh.index].center,
+                translation,
+                glm::quat()
                 );
             cubes.emplace_back(cube);
         }
@@ -159,6 +190,7 @@ namespace Game {
         Physics::Ray r(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
         Physics::HitInfo hit;
         std::vector<Physics::AABBPair> aabb_collisions;
+        Physics::Simplex s{};
 
         // game loop
         while (this->window->IsOpen()) {
@@ -172,7 +204,7 @@ namespace Game {
             this->camera->Update(dt);
 
             for (std::size_t i = 0; i < Physics::get_colliders().states.size(); ++i) {
-                Physics::add_force(Physics::ColliderId(i), Physics::gravity);
+                // Physics::add_force(Physics::ColliderId(i), Physics::gravity);
             }
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
@@ -201,30 +233,35 @@ namespace Game {
                     hit.pos,
                     glm::quat(),
                     0.1f,
-                    glm::vec4(1,0,1,1)
-                );
+                    glm::vec4(1, 0, 1, 1)
+                    );
             }
 
-            Physics::sort_and_sweep(aabb_collisions);
-            Physics::Simplex s{};
-            for (const auto& it : aabb_collisions) {
-                if (Physics::gjk(it.a, it.b, s)) {
-                    Debug::DrawSimplex(s);
+            if (Core::CVarReadInt(s_stop_sim) == 0) {
+                Physics::sort_and_sweep(aabb_collisions);
+                for (const auto& it: aabb_collisions) {
+                    if (Physics::gjk(it.a, it.b, s)) {
+                        Core::CVarWriteInt(s_stop_sim, 1);
+                    }
                 }
-                s = {};
+                Physics::step(dt);
+                Physics::update_aabbs();
             }
-            Physics::step(dt);
-            Physics::update_aabbs();
+            else {
+                Debug::DrawSimplex(s);
+            }
 
             // Store all drawcalls in the render device
-            for (auto& [model, collider] : cubes) {
-                RenderDevice::Draw(model, Physics::get_colliders().transforms[collider.index]);
-            }
+            // for (auto& [model, collider] : cubes) {
+            //     RenderDevice::Draw(model, Physics::get_colliders().transforms[collider.index]);
+            // }
 
             Debug::DrawGrid();
             Debug::DrawPlane(p, Debug::WireFrame);
-            Debug::DrawAABB();
-            Debug::DrawCMesh();
+            // Debug::DrawSelectedAABB();
+            // Debug::DrawSelectedCMesh();
+            Debug::DrawAABBs();
+            Debug::DrawCMeshes();
 
             // Execute the entire rendering pipeline
             RenderDevice::Render(this->window, dt);
@@ -292,7 +329,6 @@ namespace Game {
             int draw_cm_id = Core::CVarReadInt(r_draw_cm_id);
             if (ImGui::InputInt("Collision Mesh id", (int*)&draw_cm_id))
                 Core::CVarWriteInt(r_draw_cm_id, draw_cm_id);
-
 
             ImGui::End();
 

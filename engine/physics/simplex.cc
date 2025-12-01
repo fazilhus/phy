@@ -6,26 +6,26 @@
 
 namespace Physics {
 
-    Simplex& Simplex::operator=(std::initializer_list<glm::vec3> init) {
-        this->size = 0;
+    Simplex& Simplex::operator=(const std::initializer_list<glm::vec3>& init) {
+        this->m_size = 0;
         for (const auto& p : init) {
-            points[this->size++] = p;
+            this->m_points[this->m_size++] = p;
         }
         return *this;
     }
 
     void Simplex::add_point(const glm::vec3& point) {
-        this->points = {point, this->points[0], this->points[1], this->points[2]};
-        this->size = Math::min(this->size + 1, 4);
+        this->m_points = {point, this->m_points[0], this->m_points[1], this->m_points[2]};
+        this->m_size = Math::min(this->m_size + 1, 4ull);
     }
 
     bool same_dir(const glm::vec3& a, const glm::vec3& b) {
-        return glm::dot(a, b) > 0;
+        return glm::dot(a, b) > epsilon;
     }
 
     bool simplex_line(Simplex& s, glm::vec3& dir) {
-        const auto a = s.points[0];
-        const auto b = s.points[1];
+        const auto a = s[0];
+        const auto b = s[1];
 
         const auto ab = b - a;
         const auto ao = -a;
@@ -42,9 +42,9 @@ namespace Physics {
     }
 
     bool simplex_triangle(Simplex& s, glm::vec3& dir) {
-        const auto a = s.points[0];
-        const auto b = s.points[1];
-        const auto c = s.points[2];
+        const auto a = s[0];
+        const auto b = s[1];
+        const auto c = s[2];
 
         const auto ab = b - a;
         const auto ac = c - a;
@@ -91,10 +91,10 @@ namespace Physics {
 
     bool simplex_tetrahedron(Simplex& s, glm::vec3& dir) {
         // TODO can be optimized to use less checks
-        const auto a = s.points[0];
-        const auto b = s.points[1];
-        const auto c = s.points[2];
-        const auto d = s.points[3];
+        const auto a = s[0];
+        const auto b = s[1];
+        const auto c = s[2];
+        const auto d = s[3];
 
         const auto ab = b - a;
         const auto ac = c - a;
@@ -121,7 +121,7 @@ namespace Physics {
     }
 
     bool next_simplex(Simplex& s, glm::vec3& dir) {
-        switch (s.size) {
+        switch (s.size()) {
         case 2: return simplex_line(s, dir);
         case 3: return simplex_triangle(s, dir);
         case 4: return simplex_tetrahedron(s, dir);

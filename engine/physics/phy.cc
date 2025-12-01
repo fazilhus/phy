@@ -107,6 +107,7 @@ namespace Physics {
                 );
             s.dyn.set_pos(translation);
             s.dyn.set_rot(rotation);
+            s.dyn.set_vel(50.0f * glm::normalize(glm::vec3(-translation.x, 0, 0)));
             colliders_.states.emplace_back(s);
         }
         else {
@@ -213,7 +214,7 @@ namespace Physics {
             const auto acc = state.dyn.force_accum * state.inv_mass;
             const auto impulse = state.dyn.impulse_accum * state.inv_mass;
             state.dyn.vel += impulse + acc * dt;
-            // state.dyn.pos += state.dyn.vel * dt;
+            state.dyn.pos += state.dyn.vel * dt;
 
             state.dyn.angular_vel += glm::quat(inv_inertia_tensor) * state.dyn.torque_accum * dt;
             state.dyn.rot = glm::normalize(state.dyn.rot + 0.5f * state.dyn.angular_vel * state.dyn.rot * dt);
@@ -289,7 +290,7 @@ namespace Physics {
         auto dir = -s;
         for (;;) {
             s = support(a_id, b_id, dir);
-            if (glm::dot(s, dir) < 0) { return false; }
+            if (glm::dot(s, dir) < epsilon) { return false; }
             out_simplex.add_point(s);
             if (next_simplex(out_simplex, dir)) { return true; }
         }

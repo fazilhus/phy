@@ -237,8 +237,8 @@ namespace Game {
 
             Debug::DrawGrid();
             Debug::DrawPlane(p, Debug::WireFrame);
-            Debug::DrawAABB();
-            Debug::DrawCMesh();
+            Debug::DrawSelectedAABB();
+            Debug::DrawSelectedCMesh();
 
             // Execute the entire rendering pipeline
             RenderDevice::Render(this->window, dt);

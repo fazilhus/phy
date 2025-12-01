@@ -1,8 +1,5 @@
 ﻿#pragma once
-#include <array>
-
 #include "phy.h"
-#include "ray.h"
 #include "vec3.hpp"
 
 

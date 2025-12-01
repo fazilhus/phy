@@ -14,6 +14,8 @@
 #include "imgui.h"
 #include "core/cvar.h"
 #include "core/math.h"
+#include "physics/plane.h"
+#include "physics/ray.h"
 #include "physics/physicsmesh.h"
 #include "physics/simplex.h"
 
@@ -201,80 +203,100 @@ namespace Debug {
         DrawLine(ray.orig, ray.orig + ray.dir, line_width, color, RenderMode::Normal);
     }
 
+    void DrawAABB(const Physics::AABB& aabb) {
+        DrawBox(
+            0.5f * (aabb.max_bound + aabb.min_bound),
+            glm::quat(),
+            aabb.max_bound.x - aabb.min_bound.x,
+            aabb.max_bound.y - aabb.min_bound.y,
+            aabb.max_bound.z - aabb.min_bound.z,
+            glm::vec4(0, 1, 0, 1),
+            RenderMode::WireFrame,
+            2.0f
+            );
+    }
+
+    void DrawAABBs() {
+        const auto& colliders = Physics::get_colliders();
+        for (std::size_t i = 0; i < colliders.meshes.size(); ++i) {
+            DrawAABB(colliders.aabbs[i]);
+        }
+    }
+
     static Core::CVar* r_draw_aabb = nullptr;
     static Core::CVar* r_draw_aabb_id = nullptr;
     static Core::CVar* r_draw_cm_id = nullptr;
     static Core::CVar* r_draw_cm_norm = nullptr;
 
-    void DrawAABB() {
+    void DrawSelectedAABB() {
 #if _DEBUG
         if (Core::CVarReadInt(r_draw_aabb) > 0) {
             const auto aabb_id = Core::CVarReadInt(r_draw_aabb_id);
             const auto& colliders = Physics::get_colliders();
             for (std::size_t i = 0; i < colliders.meshes.size(); ++i) {
                 const auto& aabb = colliders.aabbs[i];
-                const auto& t = colliders.transforms[i];
                 if (aabb_id < 0 || i == aabb_id) {
-                    DrawBox(
-                        0.5f * (aabb.max_bound + aabb.min_bound),
-                        glm::quat(),
-                        aabb.max_bound.x - aabb.min_bound.x,
-                        aabb.max_bound.y - aabb.min_bound.y,
-                        aabb.max_bound.z - aabb.min_bound.z,
-                        glm::vec4(0,1,0,1),
-                        static_cast<RenderMode>(RenderMode::WireFrame /*| RenderMode::AlwaysOnTop*/),
-                        2.0f
-                    );
+                    DrawAABB(aabb);
                 }
             }
         }
 #endif
     }
 
-    void DrawCMesh() {
-#if _DEBUG
-        const auto cm_id = Core::CVarReadInt(r_draw_cm_id);
-        const auto cm_norm = Core::CVarReadInt(r_draw_cm_norm);
+    void DrawCMesh(const Physics::ColliderId cm_id) {
         const auto& colliders = Physics::get_colliders();
         const auto& cms = Physics::get_collider_meshes();
-        if (cm_id >= 0 && cm_id < colliders.meshes.size()) {
-            const auto& mesh = cms.complex[colliders.meshes[cm_id].index];
-            const auto& t = colliders.transforms[cm_id];
-            const auto& s = colliders.states[cm_id];
-            for (const auto& p : mesh.primitives) {
-                for (const auto& tri : p.triangles) {
-                    Debug::DrawTriangle(
-                        tri.v0, tri.v1, tri.v2,
-                        t * glm::scale(glm::vec3(1.0f + 0.01f)),
-                        glm::vec4(1,1,0,1),
-                        1.0f,
-                        (tri.selected) ? RenderMode::Normal : RenderMode::WireFrame
-                    );
-                    if (cm_norm != 0) {
-                        Debug::DrawLine(
-                            t * glm::vec4(tri.center, 1.0f),
-                            glm::vec3(t * glm::vec4(tri.center, 1.0f)) + 0.5f * glm::vec3(glm::quat(t) * glm::vec4(Math::safe_normal(tri.norm), 1.0f)),
-                            1.0f, glm::vec4(1)
-                            );
-                    }
+        const auto& mesh = cms.complex[colliders.meshes[cm_id.index].index];
+        const auto& t = colliders.transforms[cm_id.index];
+        const auto& s = colliders.states[cm_id.index];
+        for (const auto& p : mesh.primitives) {
+            for (const auto& tri : p.triangles) {
+                Debug::DrawTriangle(
+                    tri.v0, tri.v1, tri.v2,
+                    t * glm::scale(glm::vec3(1.0f + 0.01f)),
+                    glm::vec4(1,1,0,1),
+                    1.0f,
+                    (cm_id.index == Core::CVarReadInt(r_draw_cm_id) && tri.selected) ? RenderMode::Normal : RenderMode::WireFrame
+                );
+                if (Core::CVarReadInt(r_draw_cm_norm) != 0) {
+                    Debug::DrawLine(
+                        t * glm::vec4(tri.center, 1.0f),
+                        glm::vec3(t * glm::vec4(tri.center, 1.0f)) + 0.5f * glm::vec3(glm::quat(t) * glm::vec4(Math::safe_normal(tri.norm), 1.0f)),
+                        1.0f, glm::vec4(1)
+                        );
                 }
             }
-            // const auto omega = glm::quat(0.0f, s.dyn.angular_vel);
-            Debug::DrawLine(
-                s.dyn.pos - glm::vec3(s.dyn.angular_vel.x, s.dyn.angular_vel.y, s.dyn.angular_vel.z),
-                s.dyn.pos + glm::vec3(s.dyn.angular_vel.x, s.dyn.angular_vel.y, s.dyn.angular_vel.z),
-                2.0f,
-                glm::vec4(0.5,0,1,1)
-            );
+        }
+        Debug::DrawLine(
+            s.dyn.pos - glm::vec3(s.dyn.angular_vel.x, s.dyn.angular_vel.y, s.dyn.angular_vel.z),
+            s.dyn.pos + glm::vec3(s.dyn.angular_vel.x, s.dyn.angular_vel.y, s.dyn.angular_vel.z),
+            2.0f,
+            glm::vec4(0.5,0,1,1)
+        );
+    }
+
+    void DrawCMeshes() {
+        const auto& colliders = Physics::get_colliders();
+        for (std::size_t cm_id = 0; cm_id < colliders.meshes.size(); ++cm_id) {
+            DrawCMesh(Physics::ColliderId(cm_id));
+        }
+    }
+
+    void DrawSelectedCMesh() {
+#if _DEBUG
+        const auto& colliders = Physics::get_colliders();
+        if (const auto cm_id = Core::CVarReadInt(r_draw_cm_id);
+            cm_id >= 0 && cm_id < colliders.meshes.size()) {
+            DrawCMesh(Physics::ColliderId(cm_id));
         }
 #endif
     }
 
     void DrawSimplex(const Physics::Simplex& s) {
-        const auto a = s.points[0];
-        const auto b = s.points[1];
-        const auto c = s.points[2];
-        const auto d = s.points[3];
+        const auto a = s[0];
+        const auto b = s[1];
+        const auto c = s[2];
+        const auto d = s[3];
         Debug::DrawTriangle(
             a, b, c, glm::mat4(1), glm::vec4(1, 0.5, 0.5, 1), 1,
             static_cast<RenderMode>(RenderMode::WireFrame | RenderMode::AlwaysOnTop)

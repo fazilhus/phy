@@ -1,6 +1,5 @@
 #pragma once
-#include "physics/plane.h"
-#include "physics/ray.h"
+
 //------------------------------------------------------------------------------
 /**
 	@file	debugrender.h
@@ -11,6 +10,14 @@
 	(C) 2021 Individual contributors, see AUTHORS file
 */
 //------------------------------------------------------------------------------
+
+namespace Physics {
+    struct Plane;
+    struct Ray;
+    struct AABB;
+    struct Simplex;
+    struct ColliderId;
+}
 
 namespace Debug {
     enum RenderMode {
@@ -66,13 +73,19 @@ namespace Debug {
     void DrawGrid(
         const RenderMode renderModes = RenderMode::Normal, const float lineWidth = 1.0f
         );
+
     void DrawPlane(
         const Physics::Plane& plane, const RenderMode render_modes = RenderMode::Normal, const float line_width = 1.0f
         );
     void DrawRay(const Physics::Ray& ray, const glm::vec4& color, const float line_width = 1.0f);
 
-    void DrawAABB();
-    void DrawCMesh();
+    void DrawAABB(const Physics::AABB& aabb);
+    void DrawAABBs();
+    void DrawSelectedAABB();
+
+    void DrawCMesh(Physics::ColliderId cm_id);
+    void DrawCMeshes();
+    void DrawSelectedCMesh();
     void DrawSimplex(const Physics::Simplex& s);
 
     void InitDebugRendering();

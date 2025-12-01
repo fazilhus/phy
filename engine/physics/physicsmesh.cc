@@ -1,10 +1,11 @@
 ﻿#include "config.h"
 #include "physicsmesh.h"
 
+#include <set>
+
 #include "plane.h"
 #include "core/idpool.h"
 #include "core/math.h"
-#include "core/util.h"
 #include "fx/gltf.h"
 
 
@@ -61,9 +62,22 @@ namespace Physics {
                 mesh->primitives[prim_n].triangles.emplace_back(t);
             }
 
-            for (uint32_t i = 0; i < vb_access.count; ++i) {
-                mesh->vertices.emplace_back(vbuf[i]);
-                mesh->center += vbuf[i];
+            std::set<CompType> unique_vertices;
+            for (uint32_t i = 0; i < ib_access.count; ++i) {
+                if (!unique_vertices.contains(dim * ibuf[i])) {
+                    unique_vertices.insert(dim * ibuf[i]);
+                }
+            }
+
+            for (auto it = unique_vertices.begin(); it != unique_vertices.end(); it = std::next(it, 3)) {
+                const auto vertex = glm::vec3(
+                        vbuf[*it],
+                        vbuf[*it + 1],
+                        vbuf[*it + 2]
+                        );
+                mesh->vertices.emplace_back(vertex);
+                mesh->center += vertex;
+                // std::cout << *it << ' ' << vertex << '\n';
             }
 
             aabb->grow(glm::vec3(vb_access.min[0], vb_access.min[1], vb_access.min[2]));
@@ -222,7 +236,7 @@ namespace Physics {
             mesh->primitives[i].triangles.reserve(ib_accessor.count / 3);
             vertex_count += vb_accessor.count;
         }
-        mesh->vertices.resize(vertex_count);
+        mesh->vertices.reserve(vertex_count / 3);
 
         for (std::size_t i = 0; i < primitive_count; ++i) {
             const auto& prim = doc.meshes[0].primitives[i];

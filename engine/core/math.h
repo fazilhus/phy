@@ -25,10 +25,14 @@ namespace Math {
         return glm::angleAxis(angle, glm::normalize(axis));
     }
 
-    inline float min(const float a, const float b) { return a < b ? a : b; }
-    inline float min(const float a, const float b, const float c) { return min(min(a, b), c); }
+    template <typename T>
+    T min(const T a, const T b) { return a < b ? a : b; }
+    template <typename T>
+    T min(const T a, const T b, const T c) { return min(min(a, b), c); }
 
-    inline float max(const float a, const float b) { return a > b ? a : b; }
-    inline float max(const float a, const float b, const float c) { return max(max(a, b), c); }
+    template <typename T>
+    T max(const T a, const T b) { return a > b ? a : b; }
+    template <typename T>
+    T max(const T a, const T b, const T c) { return max(max(a, b), c); }
 
 }
