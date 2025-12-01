@@ -244,8 +244,8 @@ namespace Game {
                     if (Physics::gjk(it.a, it.b, s)) {
                         collision = Physics::epa(s, it.a, it.b);
                         if (collision.has_collision) {
-                            Physics::add_impulse(it.a, Physics::colliders().states[it.a.index].dyn.pos, -10.0f * collision.normal * collision.penetration_depth);
-                            Physics::add_impulse(it.b, Physics::colliders().states[it.b.index].dyn.pos, 10.0f * collision.normal * collision.penetration_depth);
+                            Physics::add_impulse(it.a, collision.contact_point_a, -10.0f * collision.normal * collision.penetration_depth);
+                            Physics::add_impulse(it.b, collision.contact_point_b, 10.0f * collision.normal * collision.penetration_depth);
                             // Core::CVarWriteInt(s_stop_sim, 1);
                         }
                     }
