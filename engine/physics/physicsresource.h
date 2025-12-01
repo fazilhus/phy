@@ -70,6 +70,17 @@ namespace Physics {
         }
     };
 
+    struct CollisionInfo {
+        glm::vec3 contact_point, contact_point_a, contact_point_b;
+        glm::vec3 normal{0};
+        float penetration_depth{0.0f};
+        bool has_collision{false};
+    };
+
+    struct SupportPoint {
+        glm::vec3 point, a, b;
+    };
+
     constexpr auto epsilon = std::numeric_limits<float>::epsilon();
 
 } // namespace Physics

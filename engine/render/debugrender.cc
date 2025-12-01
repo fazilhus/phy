@@ -293,10 +293,10 @@ namespace Debug {
     }
 
     void DrawSimplex(const Physics::Simplex& s) {
-        const auto a = s[0];
-        const auto b = s[1];
-        const auto c = s[2];
-        const auto d = s[3];
+        const auto a = s[0].point;
+        const auto b = s[1].point;
+        const auto c = s[2].point;
+        const auto d = s[3].point;
         Debug::DrawTriangle(
             a, b, c, glm::mat4(1), glm::vec4(1, 0.5, 0.5, 1), 1,
             static_cast<RenderMode>(RenderMode::WireFrame | RenderMode::AlwaysOnTop)

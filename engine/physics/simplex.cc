@@ -6,7 +6,7 @@
 
 namespace Physics {
 
-    Simplex& Simplex::operator=(const std::initializer_list<glm::vec3>& init) {
+    Simplex& Simplex::operator=(const std::initializer_list<SupportPoint>& init) {
         this->m_size = 0;
         for (const auto& p : init) {
             this->m_points[this->m_size++] = p;
@@ -14,23 +14,19 @@ namespace Physics {
         return *this;
     }
 
-    void Simplex::add_point(const glm::vec3& point) {
+    void Simplex::add_point(const SupportPoint& point) {
         this->m_points = {point, this->m_points[0], this->m_points[1], this->m_points[2]};
         this->m_size = Math::min(this->m_size + 1, 4ull);
-    }
-
-    bool same_dir(const glm::vec3& a, const glm::vec3& b) {
-        return glm::dot(a, b) > epsilon;
     }
 
     bool simplex_line(Simplex& s, glm::vec3& dir) {
         const auto a = s[0];
         const auto b = s[1];
 
-        const auto ab = b - a;
-        const auto ao = -a;
+        const auto ab = b.point - a.point;
+        const auto ao = -a.point;
 
-        if (same_dir(ab, ao)) {
+        if (Math::same_dir(ab, ao)) {
             s = { a, b };
             dir = glm::cross(glm::cross(ab, ao), ab);
         }
@@ -46,18 +42,18 @@ namespace Physics {
         const auto b = s[1];
         const auto c = s[2];
 
-        const auto ab = b - a;
-        const auto ac = c - a;
-        const auto ao = -a;
+        const auto ab = b.point - a.point;
+        const auto ac = c.point - a.point;
+        const auto ao = -a.point;
 
         const auto abc = glm::cross(ab, ac);
 
-        if (same_dir(abc, ac)) {
-            if (same_dir(ac, ao)) {
+        if (Math::same_dir(abc, ac)) {
+            if (Math::same_dir(ac, ao)) {
                 s = { a, c };
                 dir = glm::cross(glm::cross(ac, ao), ac);
             } else {
-                if (same_dir(ab, ao)) {
+                if (Math::same_dir(ab, ao)) {
                     s = { a, b };
                     dir = glm::cross(glm::cross(ab, ao), ab);
                 }
@@ -67,8 +63,8 @@ namespace Physics {
                 }
             }
         } else {
-            if (same_dir(ab, abc)) {
-                if (same_dir(ab, ao)) {
+            if (Math::same_dir(ab, abc)) {
+                if (Math::same_dir(ab, ao)) {
                     s = { a, b };
                     dir = glm::cross(glm::cross(ab, ao), ab);
                 }
@@ -77,7 +73,7 @@ namespace Physics {
                     dir = ao;
                 }
             } else {
-                if (same_dir(abc, ao)) {
+                if (Math::same_dir(abc, ao)) {
                     s = { a, b, c };
                     dir = abc;
                 } else {
@@ -96,24 +92,24 @@ namespace Physics {
         const auto c = s[2];
         const auto d = s[3];
 
-        const auto ab = b - a;
-        const auto ac = c - a;
-        const auto ad = d - a;
-        const auto ao = -a;
+        const auto ab = b.point - a.point;
+        const auto ac = c.point - a.point;
+        const auto ad = d.point - a.point;
+        const auto ao = -a.point;
 
         const auto abc = glm::cross(ab, ac);
         const auto acd = glm::cross(ac, ad);
         const auto adb = glm::cross(ad, ab);
 
-        if (same_dir(abc, ao)) {
+        if (Math::same_dir(abc, ao)) {
             return simplex_triangle(s = { a, b, c }, dir);
         }
 
-        if (same_dir(acd, ao)) {
+        if (Math::same_dir(acd, ao)) {
             return simplex_triangle(s = { a, c, d }, dir);
         }
 
-        if (same_dir(adb, ao)) {
+        if (Math::same_dir(adb, ao)) {
             return simplex_triangle(s = { a, d, b }, dir);
         }
 

@@ -1,23 +1,23 @@
 ﻿#pragma once
 #include <array>
-
+#include "physicsresource.h"
 
 namespace Physics {
 
     struct Simplex {
     private:
         std::size_t m_size;
-        std::array<glm::vec3, 4> m_points;
+        std::array<SupportPoint, 4> m_points;
 
     public:
         explicit Simplex() : m_size(0), m_points() {};
 
-        Simplex& operator=(const std::initializer_list<glm::vec3>& init);
+        Simplex& operator=(const std::initializer_list<SupportPoint>& init);
 
-        void add_point(const glm::vec3& point);
+        void add_point(const SupportPoint& point);
 
-        const glm::vec3& operator[](int i) const { return this->m_points[i]; }
-        glm::vec3& operator[](int i) { return this->m_points[i]; }
+        const SupportPoint& operator[](int i) const { return this->m_points[i]; }
+        SupportPoint& operator[](int i) { return this->m_points[i]; }
         size_t size() const { return this->m_size; }
 
         auto begin() const { return this->m_points.begin(); }

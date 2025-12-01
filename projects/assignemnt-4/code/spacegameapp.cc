@@ -121,9 +121,9 @@ namespace Game {
         {
             std::tuple<ModelId, Physics::ColliderId> cube;
             std::get<0>(cube) = cubemesh;
-            constexpr auto translation = glm::vec3(3, 0, 2);
-            const auto rotationAxis = normalize(glm::vec3(1, 1, 1));
-            const auto rotation = glm::quat(1.0f, rotationAxis);
+            constexpr auto translation = glm::vec3(3, 5, 2);
+            const auto rotationAxis = normalize(glm::vec3(0, 0, 1));
+            const auto rotation = glm::quat(0.40f, rotationAxis);
             std::get<1>(cube) = Physics::create_collider(
                 cubecmesh,
                 Physics::get_collider_meshes().complex[cubecmesh.index].center,
@@ -135,7 +135,7 @@ namespace Game {
         {
             std::tuple<ModelId, Physics::ColliderId> cube;
             std::get<0>(cube) = cubemesh;
-            constexpr auto translation = glm::vec3(-3, 0, 2);
+            constexpr auto translation = glm::vec3(-3, 5, 2);
             // const auto rotationAxis = normalize(glm::vec3(-1, 1, 1));
             // const auto rotation = glm::quat(1.0f, rotationAxis);
             std::get<1>(cube) = Physics::create_collider(
@@ -191,6 +191,7 @@ namespace Game {
         Physics::HitInfo hit;
         std::vector<Physics::AABBPair> aabb_collisions;
         Physics::Simplex s{};
+        Physics::CollisionInfo collision;
 
         // game loop
         while (this->window->IsOpen()) {
@@ -241,7 +242,12 @@ namespace Game {
                 Physics::sort_and_sweep(aabb_collisions);
                 for (const auto& it: aabb_collisions) {
                     if (Physics::gjk(it.a, it.b, s)) {
-                        Core::CVarWriteInt(s_stop_sim, 1);
+                        collision = Physics::epa(s, it.a, it.b);
+                        if (collision.has_collision) {
+                            Physics::add_impulse(it.a, Physics::colliders().states[it.a.index].dyn.pos, -10.0f * collision.normal * collision.penetration_depth);
+                            Physics::add_impulse(it.b, Physics::colliders().states[it.b.index].dyn.pos, 10.0f * collision.normal * collision.penetration_depth);
+                            // Core::CVarWriteInt(s_stop_sim, 1);
+                        }
                     }
                 }
                 Physics::step(dt);
@@ -249,6 +255,24 @@ namespace Game {
             }
             else {
                 Debug::DrawSimplex(s);
+                Debug::DrawBox(
+                    collision.contact_point,
+                    glm::quat(),
+                    0.1f,
+                    glm::vec4(1.0f, 0.5f, 0.5f, 1.0f)
+                );
+                Debug::DrawBox(
+                    collision.contact_point_a,
+                    glm::quat(),
+                    0.1f,
+                    glm::vec4(1.0f, 0.1f, 0.5f, 1.0f)
+                );
+                Debug::DrawBox(
+                    collision.contact_point_b,
+                    glm::quat(),
+                    0.1f,
+                    glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)
+                );
             }
 
             // Store all drawcalls in the render device

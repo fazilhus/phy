@@ -5,13 +5,11 @@
 #include "physicsmesh.h"
 #include "core/idpool.h"
 #include "core/math.h"
-#include "core/util.h"
 #include "physics/ray.h"
 #include "physics/simplex.h"
 
 
 namespace Physics {
-
     static Util::IdPool<ColliderId> collider_id_pool;
     static Colliders colliders_;
     static auto sort_axis = 0;
@@ -70,20 +68,21 @@ namespace Physics {
                         }
                         )
                     );
-            // case ShapeType::Sphere:
-            //     return {
-            //         {},
-            //         {},
-            //         {}
-            //     };
+                // case ShapeType::Sphere:
+                //     return {
+                //         {},
+                //         {},
+                //         {}
+                //     };
             case ShapeType::Custom:
                 return {
-                    {},
-                    {},
-                    {}
+                        {},
+                        {},
+                        {}
                 };
             default:
                 assert(false && "unreachable");
+                return {};
             }
         }
 
@@ -92,10 +91,10 @@ namespace Physics {
 
     ColliderId create_collider(
         ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation,
-        ShapeType type
+        const ShapeType type
         ) {
         ColliderId id;
-        const auto mat = glm::mat4(rotation) * glm::translate(translation);
+        const auto mat = glm::translate(translation) * glm::mat4(rotation);
         if (collider_id_pool.Allocate(id)) {
             colliders_.meshes.emplace_back(cm_id);
             colliders_.transforms.emplace_back(mat);
@@ -107,7 +106,6 @@ namespace Physics {
                 );
             s.dyn.set_pos(translation);
             s.dyn.set_rot(rotation);
-            s.dyn.set_vel(50.0f * glm::normalize(glm::vec3(-translation.x, 0, 0)));
             colliders_.states.emplace_back(s);
         }
         else {
@@ -132,7 +130,7 @@ namespace Physics {
 
     bool cast_ray(const Ray& ray, HitInfo& hit) {
         std::vector<HitInfo> aabb_hits;
-        for (std::size_t i = 0; i < colliders_.meshes.size(); ++i) {
+        for (uint32_t i = 0; i < colliders_.meshes.size(); ++i) {
             const auto c = ColliderId(i);
             const auto cm = colliders_.meshes[i];
             const auto& aabb = colliders_.aabbs[i];
@@ -237,19 +235,20 @@ namespace Physics {
 
     void sort_and_sweep(std::vector<AABBPair>& aabb_pairs) {
         aabb_pairs.clear();
-        std::vector<std::size_t> indices(colliders_.aabbs.size());
-        for (std::size_t i = 0; i < indices.size(); ++i) { indices[i] = i; }
+        std::vector<uint32_t> indices(colliders_.aabbs.size());
+        for (uint32_t i = 0; i < indices.size(); ++i) { indices[i] = i; }
 
         std::ranges::sort(
             indices,
-            [&](const std::size_t a, const std::size_t b)-> bool {
+            [&](const uint32_t a, const uint32_t b)-> bool {
                 const auto min_a = colliders_.aabbs[a].min_bound[sort_axis];
                 const auto min_b = colliders_.aabbs[b].min_bound[sort_axis];
-                return min_a > min_b;
+                return min_a < min_b;
             }
             );
 
-        auto sum = glm::vec3(0), sum2 = glm::vec3(0), v = glm::vec3(0);
+        auto sum = glm::vec3(0), sum2 = glm::vec3(0);
+        glm::vec3 v;
         for (std::size_t ii = 0; ii < indices.size(); ++ii) {
             const auto i = indices[ii];
             const auto a = colliders_.aabbs[i];
@@ -275,25 +274,202 @@ namespace Physics {
         }
     }
 
-    glm::vec3 support(const ColliderId a_id, const ColliderId b_id, const glm::vec3& dir) {
+    SupportPoint support(const ColliderId a_id, const ColliderId b_id, const glm::vec3& dir) {
         const auto& collider_a = get_collider_meshes().complex[colliders_.meshes[a_id.index].index];
         const auto& collider_b = get_collider_meshes().complex[colliders_.meshes[b_id.index].index];
         const auto& transform_a = colliders_.transforms[a_id.index];
         const auto& transform_b = colliders_.transforms[b_id.index];
-        return collider_a.furthest_along(transform_a, dir) - collider_b.furthest_along(transform_b, -dir);
+        const auto n_dir = glm::normalize(dir);
+        const auto a = collider_a.furthest_along(transform_a, n_dir);
+        const auto b = collider_b.furthest_along(transform_b, -n_dir);
+        return { a - b, a, b };
     }
 
     bool gjk(const ColliderId a_id, const ColliderId b_id, Simplex& out_simplex) {
         auto s = support(a_id, b_id, glm::vec3(1, 0, 0));
         out_simplex = {};
         out_simplex.add_point(s);
-        auto dir = -s;
-        for (;;) {
+        auto dir = -s.point;
+        for (std::size_t i = 0; i < 65; ++i) {
             s = support(a_id, b_id, dir);
-            if (glm::dot(s, dir) < epsilon) { return false; }
+            if (glm::dot(s.point, dir) < epsilon) { return false; }
             out_simplex.add_point(s);
             if (next_simplex(out_simplex, dir)) { return true; }
         }
+        return false;
+    }
+
+    std::pair<std::vector<glm::vec4>, std::size_t> face_normals(
+        const std::vector<SupportPoint>& polytope, const std::vector<std::size_t>& faces
+        ) {
+        std::vector<glm::vec4> normals;
+        std::size_t min_tri = 0;
+        auto min_dist = FLT_MAX;
+
+        for (std::size_t i = 0; i < faces.size(); i += 3) {
+            const auto a = polytope[faces[i + 0]].point;
+            const auto b = polytope[faces[i + 1]].point;
+            const auto c = polytope[faces[i + 2]].point;
+            auto norm = glm::normalize(glm::cross(b - a, c - a));
+            auto dist = glm::dot(norm, a);
+
+            if (dist < epsilon) {
+                norm *= -1.0f;
+                dist *= -1.0f;
+            }
+
+            normals.emplace_back(norm, dist);
+
+            if (dist < min_dist) {
+                min_dist = dist;
+                min_tri = i / 3;
+            }
+        }
+
+        return { normals, min_tri };
+    }
+
+    struct Edge {
+        std::size_t a, b;
+
+        bool operator==(const Edge& other) const {
+            return a == other.a && b == other.b || a == other.b && b == other.a;
+        }
+    };
+
+    void add_if_unique_edge(
+        std::vector<Edge>& edges, const std::vector<std::size_t>& faces, const std::size_t a, const std::size_t b
+        ) {
+        const auto reverse = std::ranges::find(
+            edges
+            ,
+            Edge{faces[a], faces[b]}
+            );
+
+        if (reverse != edges.end()) {
+            edges.erase(reverse);
+        }
+        else {
+            edges.emplace_back(faces[a], faces[b]);
+        }
+    }
+
+    CollisionInfo epa(const Simplex& simplex, const ColliderId a_id, const ColliderId b_id) {
+        std::vector<SupportPoint> polytope(simplex.begin(), simplex.end());
+        std::vector<size_t> faces = {
+            0, 1, 2,
+            0, 3, 1,
+            0, 2, 3,
+            1, 3, 2
+        };
+        auto [normals, min_face] = face_normals(polytope, faces);
+        glm::vec3 min_norm;
+        auto min_dist{FLT_MAX};
+
+        std::vector<Edge> unique_edges;
+        std::vector<std::size_t> new_faces;
+
+        while (min_dist == FLT_MAX) {
+            min_norm = xyz(normals[min_face]);
+            min_dist = normals[min_face].w;
+
+            const auto s = support(a_id, b_id, min_norm);
+            const auto s_dist = glm::dot(min_norm, s.point);
+
+            if (fabs(s_dist - min_dist) > epsilon) {
+                min_dist = FLT_MAX;
+            }
+
+            unique_edges.clear();
+            for (std::size_t i = 0; i < normals.size(); ++i) {
+                const auto dns = glm::dot(normals[i], glm::vec4(s.point, 1.0f));
+                const auto dnf = glm::dot(normals[i], glm::vec4(polytope[faces[i * 3]].point, 1.0f));
+                if (dns > dnf) {
+                    const auto f = i * 3;
+                    add_if_unique_edge(unique_edges, faces, f + 0, f + 1);
+                    add_if_unique_edge(unique_edges, faces, f + 1, f + 2);
+                    add_if_unique_edge(unique_edges, faces, f + 2, f + 0);
+
+                    faces[f + 2] = faces.back();
+                    faces.pop_back();
+                    faces[f + 1] = faces.back();
+                    faces.pop_back();
+                    faces[f + 0] = faces.back();
+                    faces.pop_back();
+
+                    normals[i] = normals.back();
+                    normals.pop_back();
+
+                    i--;
+                }
+            }
+
+            new_faces.clear();
+            for (auto [e1, e2] : unique_edges) {
+                new_faces.push_back(e1);
+                new_faces.push_back(e2);
+                new_faces.push_back(polytope.size());
+            }
+
+            polytope.push_back(s);
+            auto [new_normals, new_min_face] = face_normals(polytope, new_faces);
+
+            auto old_min_distance{FLT_MAX};
+            for (std::size_t i = 0; i < normals.size(); i++) {
+                if (normals[i].w < old_min_distance) {
+                    old_min_distance = normals[i].w;
+                    min_face = i;
+                }
+            }
+
+            if (new_normals.empty()) {
+                return {};
+            }
+            if (new_normals[new_min_face].w < old_min_distance) { min_face = new_min_face + normals.size(); }
+
+            faces.insert(faces.end(), new_faces.begin(), new_faces.end());
+            normals.insert(normals.end(), new_normals.begin(), new_normals.end());
+        }
+
+        const auto& s0 = polytope[faces[min_face * 3]];
+        const auto& s1 = polytope[faces[min_face * 3 + 1]];
+        const auto& s2 = polytope[faces[min_face * 3 + 2]];
+        const auto a = s0.point;
+        const auto b = s1.point;
+        const auto c = s2.point;
+
+        const auto ab = b - a;
+        const auto ac = c - a;
+        const auto ao = -a;
+
+        const auto abab = glm::dot(ab, ab);
+        const auto abac = glm::dot(ab, ac);
+        const auto acac = glm::dot(ac, ac);
+        const auto aoab = glm::dot(ao, ab);
+        const auto aoac = glm::dot(ao, ac);
+
+        const auto denom = abac * abac - abab * acac;
+        auto s = (abac * aoac - acac * aoab) / denom;
+        auto t = (abac * aoab - abab * aoac) / denom;
+
+        s = Math::clamp(s, 0.0f, 1.0f);
+        t = Math::clamp(t, 0.0f, 1.0f);
+        if (const auto sum = s + t;
+            sum - 1.0f > epsilon) {
+            s /= sum;
+            t /= sum;
+        }
+        const auto r = 1.0f - s - t;
+
+        CollisionInfo ret;
+        ret.contact_point_a = r * s0.a + s * s1.a + t * s2.a;
+        ret.contact_point_b = r * s0.b + s * s1.b + t * s2.b;
+        ret.contact_point = 0.5f * (ret.contact_point_a + ret.contact_point_b);
+        ret.normal = min_norm;
+        ret.penetration_depth = min_dist + epsilon;
+        ret.has_collision = true;
+
+        return ret;
     }
 
 

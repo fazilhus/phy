@@ -79,7 +79,7 @@ namespace Physics {
 
     void sort_and_sweep(std::vector<AABBPair>& aabb_pairs);
 
-    glm::vec3 support(ColliderId a_id, ColliderId b_id, const glm::vec3& dir);
     bool gjk(ColliderId a_id, ColliderId b_id, Simplex& out_simplex);
+    CollisionInfo epa(const Simplex& simplex, ColliderId a_id, ColliderId b_id);
 
 } // namespace Physics
