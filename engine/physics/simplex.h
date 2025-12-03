@@ -18,10 +18,10 @@ namespace Physics {
 
         const SupportPoint& operator[](int i) const { return this->m_points[i]; }
         SupportPoint& operator[](int i) { return this->m_points[i]; }
-        size_t size() const { return this->m_size; }
+        [[nodiscard]] std::size_t size() const { return this->m_size; }
 
-        auto begin() const { return this->m_points.begin(); }
-        auto end() const { return this->m_points.end() - (4 - this->m_size); }
+        [[nodiscard]] auto begin() const { return this->m_points.begin(); }
+        [[nodiscard]] auto end() const { return this->m_points.end() - static_cast<ptrdiff_t>(4 - this->m_size); }
     };
 
     bool next_simplex(Simplex& s, glm::vec3& dir);

@@ -48,7 +48,7 @@ namespace Physics {
 
         const auto abc = glm::cross(ab, ac);
 
-        if (Math::same_dir(abc, ac)) {
+        if (Math::same_dir(glm::cross(abc, ac), ao)) {
             if (Math::same_dir(ac, ao)) {
                 s = { a, c };
                 dir = glm::cross(glm::cross(ac, ao), ac);
@@ -63,7 +63,7 @@ namespace Physics {
                 }
             }
         } else {
-            if (Math::same_dir(ab, abc)) {
+            if (Math::same_dir(glm::cross(ab, abc), ao)) {
                 if (Math::same_dir(ab, ao)) {
                     s = { a, b };
                     dir = glm::cross(glm::cross(ab, ao), ab);
