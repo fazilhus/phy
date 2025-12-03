@@ -269,8 +269,8 @@ namespace Physics {
 
             v = sum2 - sum * sum / static_cast<float>(indices.size());
             sort_axis = 0;
-            if (v[1] > v[0]) sort_axis = 1;
-            if (v[2] > v[1]) sort_axis = 2;
+            if (v.y > v.x) sort_axis = 1;
+            if (v.z > v.y) sort_axis = 2;
         }
     }
 
@@ -290,13 +290,12 @@ namespace Physics {
         out_simplex = {};
         out_simplex.add_point(s);
         auto dir = -s.point;
-        for (std::size_t i = 0; i < 65; ++i) {
+        for (;;) {
             s = support(a_id, b_id, dir);
-            if (glm::dot(s.point, dir) < epsilon) { return false; }
             out_simplex.add_point(s);
+            if (glm::dot(out_simplex[0].point, dir) < epsilon) { return false; }
             if (next_simplex(out_simplex, dir)) { return true; }
         }
-        return false;
     }
 
     std::pair<std::vector<glm::vec4>, std::size_t> face_normals(
@@ -369,7 +368,7 @@ namespace Physics {
         std::vector<Edge> unique_edges;
         std::vector<std::size_t> new_faces;
 
-        while (min_dist == FLT_MAX) {
+        for (auto i = 0; min_dist == FLT_MAX && i < 64; ++i) {
             min_norm = xyz(normals[min_face]);
             min_dist = normals[min_face].w;
 
