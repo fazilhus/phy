@@ -19,9 +19,8 @@ namespace Physics {
             glm::vec3 vel = glm::vec3(0);
             glm::quat rot = glm::quat();
             glm::quat angular_vel = glm::quat();
-            glm::vec3 force_accum = glm::vec3(0);
             glm::vec3 impulse_accum = glm::vec3(0);
-            glm::quat torque_accum = glm::quat();
+            glm::vec3 torque_accum = glm::vec3(0);
 
             Dyn& set_pos(const glm::vec3& p);
             Dyn& set_vel(const glm::vec3& v);
@@ -54,7 +53,7 @@ namespace Physics {
         std::vector<State> states;
     };
 
-    constexpr auto gravity = glm::vec3(0, -0.1f, 0);
+    constexpr auto gravity = glm::vec3(0, -0.00981f, 0);
 
     const Colliders& get_colliders();
     Colliders& colliders();
@@ -68,7 +67,7 @@ namespace Physics {
     bool cast_ray(const Ray& ray, HitInfo& hit);
     bool cast_ray(const glm::vec3& start, const glm::vec3& dir, HitInfo& hit);
 
-    void add_force(ColliderId collider, const glm::vec3& f);
+    void add_center_impulse(ColliderId collider, const glm::vec3& dir);
     void add_impulse(ColliderId collider, const glm::vec3& loc, const glm::vec3& dir);
     void step(float dt);
     void update_aabbs();

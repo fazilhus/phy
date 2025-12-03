@@ -205,7 +205,7 @@ namespace Game {
             this->camera->Update(dt);
 
             for (std::size_t i = 0; i < Physics::get_colliders().states.size(); ++i) {
-                // Physics::add_force(Physics::ColliderId(i), Physics::gravity);
+                // Physics::add_center_impulse(Physics::ColliderId(i), Physics::gravity);
             }
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
@@ -219,7 +219,7 @@ namespace Game {
                     Core::CVarWriteInt(aabb, 1);
                     Core::CVarWriteInt(aabb_id, hit.collider.index);
                     Core::CVarWriteInt(cm_id, hit.collider.index);
-                    Physics::add_impulse(hit.collider, hit.pos, r.dir);
+                    Physics::add_impulse(hit.collider, hit.pos, 0.01f * r.dir);
                 }
                 else {
                     Core::CVarWriteInt(aabb, 0);
@@ -244,8 +244,9 @@ namespace Game {
                     if (Physics::gjk(it.a, it.b, s)) {
                         collision = Physics::epa(s, it.a, it.b);
                         if (collision.has_collision) {
-                            Physics::add_impulse(it.a, collision.contact_point_a, -10.0f * collision.normal * collision.penetration_depth);
-                            Physics::add_impulse(it.b, collision.contact_point_b, 10.0f * collision.normal * collision.penetration_depth);
+                            const auto force = 0.01f * collision.normal * collision.penetration_depth;
+                            Physics::add_impulse(it.a, collision.contact_point_a, -force);
+                            Physics::add_impulse(it.b, collision.contact_point_b, force);
                             // Core::CVarWriteInt(s_stop_sim, 1);
                         }
                     }
@@ -273,6 +274,9 @@ namespace Game {
                     0.1f,
                     glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)
                 );
+                const auto dir = collision.normal;
+                Debug::DrawRay(Physics::Ray{collision.contact_point_a, -dir}, glm::vec4(1.0f, 0.1f, 0.5f, 1.0f));
+                Debug::DrawRay(Physics::Ray{collision.contact_point_b, dir}, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f));
             }
 
             // Store all drawcalls in the render device

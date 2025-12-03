@@ -25,9 +25,9 @@ namespace Physics {
 
         bool intersect(const Ray& ray, HitInfo& hit) const {
             if (const auto denominator = glm::dot(this->norm, ray.dir);
-                abs(denominator) > epsilon) {
+                abs(denominator) > epsilon_f) {
                 if (const auto t = glm::dot(this->point() - ray.orig, this->norm) / denominator;
-                    t > epsilon) {
+                    t > epsilon_f) {
                     hit.pos = ray.orig + t * ray.dir;
                     return true;
                     }

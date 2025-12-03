@@ -71,7 +71,7 @@ namespace Physics {
     };
 
     struct CollisionInfo {
-        glm::vec3 contact_point, contact_point_a, contact_point_b;
+        glm::vec3 contact_point{0}, contact_point_a{0}, contact_point_b{0};
         glm::vec3 normal{0};
         float penetration_depth{0.0f};
         bool has_collision{false};
@@ -81,6 +81,8 @@ namespace Physics {
         glm::vec3 point, a, b;
     };
 
-    constexpr auto epsilon = std::numeric_limits<float>::epsilon();
+    constexpr auto epsilon_f = std::numeric_limits<float>::epsilon();
+    constexpr auto max_f = std::numeric_limits<float>::max();
+    constexpr auto inf_f = std::numeric_limits<float>::infinity();
 
 } // namespace Physics

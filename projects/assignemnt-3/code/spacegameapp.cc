@@ -222,7 +222,7 @@ namespace Game {
             this->camera->Update(dt);
 
             for (std::size_t i = 0; i < Physics::get_colliders().states.size(); ++i) {
-                Physics::add_force(Physics::ColliderId(i), Physics::gravity);
+                Physics::add_center_impulse(Physics::ColliderId(i), Physics::gravity);
             }
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }

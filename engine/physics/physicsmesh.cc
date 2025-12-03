@@ -101,19 +101,19 @@ namespace Physics {
         const auto ray_cross_e2 = glm::cross(r.dir, edge2);
         const auto det = glm::dot(edge1, ray_cross_e2);
 
-        if (det < epsilon) { return false; }
+        if (det < epsilon_f) { return false; }
 
         const auto inv_det = 1.0f / det;
         const auto ray_to_v0 = r.orig - this->v0;
         const auto u = inv_det * glm::dot(ray_to_v0, ray_cross_e2);
-        if ((u < 0.0f && fabs(u) > epsilon) || (u > 1.0f && fabs(u - 1.0f) > epsilon)) { return false; }
+        if ((u < 0.0f && fabs(u) > epsilon_f) || (u > 1.0f && fabs(u - 1.0f) > epsilon_f)) { return false; }
 
         const auto ray_to_v0_cross_e1 = glm::cross(ray_to_v0, edge1);
         const auto v = inv_det * glm::dot(r.dir, ray_to_v0_cross_e1);
-        if ((v < 0.0f && fabs(v) > epsilon) || (u + v > 1.0f && fabs(u + v - 1.0f) > epsilon)) { return false; }
+        if ((v < 0.0f && fabs(v) > epsilon_f) || (u + v > 1.0f && fabs(u + v - 1.0f) > epsilon_f)) { return false; }
 
         hit.t = inv_det * glm::dot(edge2, ray_to_v0_cross_e1);
-        if (hit.t > epsilon) {
+        if (hit.t > epsilon_f) {
             hit.local_pos = r.orig + r.dir * hit.t;
             hit.local_norm = this->norm;
             return true;
