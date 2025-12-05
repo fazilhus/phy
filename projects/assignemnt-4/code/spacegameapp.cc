@@ -244,10 +244,10 @@ namespace Game {
                     if (Physics::gjk(it.a, it.b, s)) {
                         collision = Physics::epa(s, it.a, it.b);
                         if (collision.has_collision) {
-                            const auto force = 0.01f * collision.normal * collision.penetration_depth;
-                            Physics::add_impulse(it.a, collision.contact_point_a, -force);
-                            Physics::add_impulse(it.b, collision.contact_point_b, force);
-                            // Core::CVarWriteInt(s_stop_sim, 1);
+                            const auto force = collision.normal;
+                            // Physics::add_impulse(it.a, collision.contact_point_a, force);
+                            // Physics::add_impulse(it.b, collision.contact_point_b, -force);
+                            Core::CVarWriteInt(s_stop_sim, 1);
                         }
                     }
                 }
@@ -274,9 +274,9 @@ namespace Game {
                     0.1f,
                     glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)
                 );
-                const auto dir = collision.normal;
-                Debug::DrawRay(Physics::Ray{collision.contact_point_a, -dir}, glm::vec4(1.0f, 0.1f, 0.5f, 1.0f));
-                Debug::DrawRay(Physics::Ray{collision.contact_point_b, dir}, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f));
+                const auto dir = 100.0f * collision.normal;
+                Debug::DrawRay(Physics::Ray{collision.contact_point_a, dir}, glm::vec4(1.0f, 0.1f, 0.5f, 1.0f));
+                Debug::DrawRay(Physics::Ray{collision.contact_point_b, -dir}, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f));
             }
 
             // Store all drawcalls in the render device

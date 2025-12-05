@@ -60,7 +60,7 @@ namespace Physics {
 
     ColliderId create_collider(
         ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation,
-        ShapeType type = ShapeType::Box
+        float mass = 1.0f, ShapeType type = ShapeType::Box
         );
     void set_transform(ColliderId collider, const glm::mat4& t);
 

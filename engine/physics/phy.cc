@@ -91,7 +91,7 @@ namespace Physics {
 
     ColliderId create_collider(
         ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation,
-        const ShapeType type
+        const float mass, const ShapeType type
         ) {
         ColliderId id;
         const auto mat = glm::translate(translation) * glm::mat4(rotation);
@@ -100,7 +100,7 @@ namespace Physics {
             colliders_.transforms.emplace_back(mat);
             colliders_.aabbs.emplace_back(get_collider_meshes().simple[cm_id.index]);
             State s;
-            s.set_mass(1.0f).set_drag(0.99f).set_orig(orig);
+            s.set_mass(mass).set_drag(0.99f).set_orig(orig);
             s.set_inertia_tensor(
                 Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index])
                 );
@@ -113,7 +113,7 @@ namespace Physics {
             colliders_.transforms[id.index] = mat;
             colliders_.aabbs[id.index] = get_collider_meshes().simple[cm_id.index];
             auto& s = colliders_.states[id.index];
-            s.set_mass(1.0f).set_drag(0.99f).set_orig(orig);
+            s.set_mass(mass).set_drag(0.99f).set_orig(orig);
             s.set_inertia_tensor(
                 Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index])
                 );
@@ -273,9 +273,8 @@ namespace Physics {
         const auto& collider_b = get_collider_meshes().complex[colliders_.meshes[b_id.index].index];
         const auto& transform_a = colliders_.transforms[a_id.index];
         const auto& transform_b = colliders_.transforms[b_id.index];
-        const auto n_dir = glm::normalize(dir);
-        const auto a = collider_a.furthest_along(transform_a, n_dir);
-        const auto b = collider_b.furthest_along(transform_b, -n_dir);
+        const auto a = collider_a.furthest_along(transform_a, dir);
+        const auto b = collider_b.furthest_along(transform_b, -dir);
         return { a - b, a, b };
     }
 
@@ -293,148 +292,142 @@ namespace Physics {
         return false;
     }
 
-    std::pair<std::vector<glm::vec4>, std::size_t> face_normals(
-        const std::vector<SupportPoint>& polytope, const std::vector<std::size_t>& faces
-        ) {
-        std::vector<glm::vec4> normals;
-        std::size_t min_tri = 0;
-        auto min_dist = FLT_MAX;
-
-        for (std::size_t i = 0; i < faces.size(); i += 3) {
-            const auto a = polytope[faces[i + 0]].point;
-            const auto b = polytope[faces[i + 1]].point;
-            const auto c = polytope[faces[i + 2]].point;
-            auto norm = glm::normalize(glm::cross(b - a, c - a));
-            auto dist = glm::dot(norm, a);
-
-            if (dist < epsilon_f) {
-                norm *= -1.0f;
-                dist *= -1.0f;
-            }
-
-            normals.emplace_back(norm, dist);
-
-            if (dist < min_dist) {
-                min_dist = dist;
-                min_tri = i / 3;
-            }
-        }
-
-        return { normals, min_tri };
-    }
-
-    struct Edge {
-        std::size_t a, b;
-
-        bool operator==(const Edge& other) const {
-            return a == other.a && b == other.b || a == other.b && b == other.a;
-        }
+    struct Face {
+        union {
+            SupportPoint v[3];
+            struct {
+                SupportPoint v0, v1, v2;
+            };
+        };
+        glm::vec3 normal;
     };
 
-    void add_if_unique_edge(
-        std::vector<Edge>& edges, const std::vector<std::size_t>& faces, const std::size_t a, const std::size_t b
-        ) {
-        const auto reverse = std::ranges::find(
-            edges
-            ,
-            Edge{faces[a], faces[b]}
-            );
-
-        if (reverse != edges.end()) {
-            edges.erase(reverse);
-        }
-        else {
-            edges.emplace_back(faces[a], faces[b]);
-        }
-    }
+    struct Edge {
+        union {
+            SupportPoint v[2];
+            struct {
+                SupportPoint v0, v1;
+            };
+        };
+    };
 
     CollisionInfo epa(const Simplex& simplex, const ColliderId a_id, const ColliderId b_id) {
         constexpr auto max_iterations = 64;
         constexpr auto max_faces = 64;
-        constexpr auto max_unique_edges = 32;
-        std::vector<SupportPoint> polytope(simplex.begin(), simplex.end());
-        std::vector<size_t> faces = {
-            0, 1, 2,
-            0, 3, 1,
-            0, 2, 3,
-            1, 3, 2
-        };
-        auto [normals, min_face] = face_normals(polytope, faces);
-        glm::vec3 min_norm{0};
+        constexpr auto max_edges = 32;
+
+        std::vector<Face> faces;
+        faces.emplace_back(Face{
+            .v0 = simplex[0],
+            .v1 = simplex[1],
+            .v2 = simplex[2],
+            .normal = glm::normalize(glm::cross(simplex[1].point - simplex[0].point, simplex[2].point - simplex[0].point))
+        });
+        faces.emplace_back(Face{
+            .v0 = simplex[0],
+            .v1 = simplex[2],
+            .v2 = simplex[3],
+            .normal = glm::normalize(glm::cross(simplex[2].point - simplex[0].point, simplex[3].point - simplex[0].point))
+        });
+        faces.emplace_back(Face{
+            .v0 = simplex[0],
+            .v1 = simplex[3],
+            .v2 = simplex[1],
+            .normal = glm::normalize(glm::cross(simplex[3].point - simplex[0].point, simplex[1].point - simplex[0].point))
+        });
+        faces.emplace_back(Face{
+            .v0 = simplex[1],
+            .v1 = simplex[3],
+            .v2 = simplex[2],
+            .normal = glm::normalize(glm::cross(simplex[3].point - simplex[1].point, simplex[2].point - simplex[1].point))
+        });
+        std::vector<Edge> loose_edges;
+
+        std::size_t min_face{};
         auto min_dist{max_f};
 
-        std::vector<Edge> unique_edges;
-        std::vector<std::size_t> new_faces;
+        CollisionInfo ret{};
 
-        for (auto i = 0; min_dist == max_f && i < max_iterations; ++i) {
-            min_norm = xyz(normals[min_face]);
-            min_dist = normals[min_face].w;
-
-            const auto s = support(a_id, b_id, min_norm);
-            const auto s_dist = glm::dot(min_norm, s.point);
-
-            if (fabs(s_dist - min_dist) > epsilon_f) {
-                min_dist = max_f;
-            }
-
-            unique_edges.clear();
-            for (std::size_t j = 0; j < normals.size(); ++j) {
-                if (glm::dot(normals[j], glm::vec4(s.point, 1.0f)) > glm::dot(normals[j], glm::vec4(polytope[faces[j * 3]].point, 1.0f))) {
-                    const auto f = j * 3;
-                    add_if_unique_edge(unique_edges, faces, f + 0, f + 1);
-                    add_if_unique_edge(unique_edges, faces, f + 1, f + 2);
-                    add_if_unique_edge(unique_edges, faces, f + 2, f + 0);
-
-                    faces[f + 2] = faces.back();
-                    faces.pop_back();
-                    faces[f + 1] = faces.back();
-                    faces.pop_back();
-                    faces[f + 0] = faces.back();
-                    faces.pop_back();
-
-                    normals[j] = normals.back();
-                    normals.pop_back();
-
-                    j--;
-                }
-            }
-            if (unique_edges.size() >= max_unique_edges) {
-                break;
-            }
-            if (unique_edges.empty()) {
-                continue;
-            }
-
-            new_faces.clear();
-            for (auto [e1, e2] : unique_edges) {
-                new_faces.push_back(e1);
-                new_faces.push_back(e2);
-                new_faces.push_back(polytope.size());
-            }
-            if (new_faces.size() >= max_faces) {
-                break;
-            }
-
-            polytope.push_back(s);
-            auto [new_normals, new_min_face] = face_normals(polytope, new_faces);
-
-            auto old_min_distance{max_f};
-            for (std::size_t j = 0; j < normals.size(); j++) {
-                if (normals[j].w < old_min_distance) {
-                    old_min_distance = normals[j].w;
+        for (auto i = 0; i < max_iterations; ++i) {
+            min_dist = glm::dot(faces[0].v0.point, faces[0].normal);
+            min_face = 0;
+            for (auto j = 0; j < faces.size(); ++j) {
+                if (const auto dist = glm::dot(faces[j].v0.point, faces[j].normal);
+                    dist < min_dist) {
+                    min_dist = dist;
                     min_face = j;
                 }
             }
 
-            if (new_normals[new_min_face].w < old_min_distance) { min_face = new_min_face + normals.size(); }
+            const auto dir = faces[min_face].normal;
+            const auto s = support(a_id, b_id, dir);
 
-            faces.insert(faces.end(), new_faces.begin(), new_faces.end());
-            normals.insert(normals.end(), new_normals.begin(), new_normals.end());
+            if (glm::dot(s.point, dir) - min_dist < epsilon_f) {
+                ret.normal = -faces[min_face].normal * glm::dot(s.point, dir);
+                break;
+            }
+
+            loose_edges.clear();
+            for (auto j = 0; j < faces.size(); ++j) {
+                if (glm::dot(faces[j].v0.point, faces[j].normal) < epsilon_f) {
+                    j++;
+                    continue;
+                }
+
+                for (auto k = 0; k < 3; ++k) {
+                    Edge curr_edge{};
+                    curr_edge.v0 = faces[j].v[k];
+                    curr_edge.v1 = faces[j].v[(k + 1) % 3];
+                    auto found_edge{false};
+
+                    for (auto& it : loose_edges) {
+                        if (it.v0.point == curr_edge.v0.point && it.v1.point == curr_edge.v1.point) {
+                            it.v0 = loose_edges.back().v0;
+                            it.v1 = loose_edges.back().v1;
+                            loose_edges.pop_back();
+                            found_edge = true;
+                            break;
+                        }
+                    }
+
+                    if (!found_edge) {
+                        if (loose_edges.size() > max_edges) {
+                            break;
+                        }
+
+                        loose_edges.emplace_back(curr_edge);
+                    }
+                }
+
+                faces[j] = faces.back();
+                faces.pop_back();
+            }
+
+            for (auto& it : loose_edges) {
+                if (faces.size() > max_faces) {
+                    break;
+                }
+
+                auto new_face = Face{
+                    .v0 = it.v0,
+                    .v1 = it.v1,
+                    .v2 = s,
+                    .normal = glm::normalize(glm::cross(it.v0.point - it.v1.point, it.v0.point - s.point))
+                };
+                if (glm::dot(new_face.v0.point, new_face.normal) < epsilon_f) {
+                    const auto tmp = new_face.v0;
+                    new_face.v0 = new_face.v1;
+                    new_face.v1 = tmp;
+                    new_face.normal *= -1.0f;
+                }
+                faces.push_back(new_face);
+            }
         }
 
-        const auto& s0 = polytope[faces[min_face * 3]];
-        const auto& s1 = polytope[faces[min_face * 3 + 1]];
-        const auto& s2 = polytope[faces[min_face * 3 + 2]];
+        ret.normal = -faces[min_face].normal * glm::dot(faces[min_face].v0.point, faces[min_face].normal);
+        const auto& s0 = faces[min_face].v0;
+        const auto& s1 = faces[min_face].v1;
+        const auto& s2 = faces[min_face].v2;
         const auto a = s0.point;
         const auto b = s1.point;
         const auto c = s2.point;
@@ -459,15 +452,13 @@ namespace Physics {
             sum - 1.0f > epsilon_f) {
             s /= sum;
             t /= sum;
-        }
+            }
         const auto r = 1.0f - s - t;
 
-        CollisionInfo ret;
         ret.contact_point_a = r * s0.a + s * s1.a + t * s2.a;
         ret.contact_point_b = r * s0.b + s * s1.b + t * s2.b;
         ret.contact_point = 0.5f * (ret.contact_point_a + ret.contact_point_b);
-        ret.normal = min_norm;
-        ret.penetration_depth = min_dist + epsilon_f;
+        ret.penetration_depth = min_dist;
         ret.has_collision = true;
 
         if (min_dist == max_f) {
