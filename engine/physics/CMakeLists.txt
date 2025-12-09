@@ -6,6 +6,7 @@ SET(files_physics
     phy.h
     phy.cc
     plane.h
+    plane.cc
     ray.h
     physicsmesh.h
     physicsmesh.cc

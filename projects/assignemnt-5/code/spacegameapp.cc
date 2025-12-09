@@ -22,6 +22,7 @@
 
 #include "core/filesystem.h"
 #include "core/math.h"
+#include "physics/phy.h"
 #include "physics/physicsmesh.h"
 #include "physics/plane.h"
 #include "physics/simplex.h"

@@ -2,11 +2,13 @@
 
 #include "phy.h"
 
-#include "physicsmesh.h"
 #include "core/idpool.h"
 #include "core/math.h"
 #include "physics/ray.h"
 #include "physics/simplex.h"
+#include "physics/physicsmesh.h"
+#include "physics/physicsresource.h"
+
 
 
 namespace Physics {
@@ -466,6 +468,10 @@ namespace Physics {
         }
 
         return ret;
+    }
+
+    void collision_solver(const CollisionInfo& ci, ColliderId a_id, ColliderId b_id) {
+
     }
 
 

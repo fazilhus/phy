@@ -3,9 +3,9 @@
 
 
 namespace Physics {
-    struct Simplex;
 
     struct Ray;
+    struct Simplex;
 
     enum class ShapeType : uint8_t {
         Box = 0,
@@ -38,10 +38,6 @@ namespace Physics {
         State& set_orig(const glm::vec3& o);
         State& set_drag(float d);
         State& set_mass(float m);
-    };
-
-    struct Deriv {
-        glm::vec3 dpos = glm::vec3(0), dvel = glm::vec3(0);
     };
 
     struct AABB;
@@ -80,5 +76,6 @@ namespace Physics {
 
     bool gjk(ColliderId a_id, ColliderId b_id, Simplex& out_simplex);
     CollisionInfo epa(const Simplex& simplex, ColliderId a_id, ColliderId b_id);
+    void collision_solver(const CollisionInfo& ci, ColliderId a_id, ColliderId b_id);
 
 } // namespace Physics

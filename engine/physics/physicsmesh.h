@@ -1,9 +1,12 @@
 ﻿#pragma once
-#include "phy.h"
 #include "vec3.hpp"
 
 
 namespace Physics {
+
+    struct Ray;
+    struct HitInfo;
+    struct ColliderMeshId;
 
     struct ColliderMesh {
         struct Triangle {

@@ -14,6 +14,7 @@
 #include "imgui.h"
 #include "core/cvar.h"
 #include "core/math.h"
+#include "physics/phy.h"
 #include "physics/plane.h"
 #include "physics/ray.h"
 #include "physics/physicsmesh.h"

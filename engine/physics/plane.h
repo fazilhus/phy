@@ -1,11 +1,11 @@
 ﻿#pragma once
-#include "phy.h"
-#include "ray.h"
 #include "vec3.hpp"
 #include "vec4.hpp"
 
 
 namespace Physics {
+    struct Ray;
+    struct HitInfo;
 
     struct Plane {
         glm::vec3 norm;
@@ -23,17 +23,7 @@ namespace Physics {
 
         [[nodiscard]] glm::vec3 point() const { return norm * dist; }
 
-        bool intersect(const Ray& ray, HitInfo& hit) const {
-            if (const auto denominator = glm::dot(this->norm, ray.dir);
-                abs(denominator) > epsilon_f) {
-                if (const auto t = glm::dot(this->point() - ray.orig, this->norm) / denominator;
-                    t > epsilon_f) {
-                    hit.pos = ray.orig + t * ray.dir;
-                    return true;
-                    }
-                }
-            return false;
-        }
+        bool intersect(const Ray& ray, HitInfo& hit) const;
     };
 
 } // namespace Physics
