@@ -2,19 +2,30 @@
 
 #include "phy.h"
 
+#include "core/cvar.h"
 #include "core/idpool.h"
 #include "core/math.h"
 #include "physics/ray.h"
 #include "physics/simplex.h"
 #include "physics/physicsmesh.h"
 #include "physics/physicsresource.h"
+#include "render/debugrender.h"
 
+
+namespace Core {
+    struct CVar;
+}
 
 
 namespace Physics {
+
     static Util::IdPool<ColliderId> collider_id_pool;
     static Colliders colliders_;
     static auto sort_axis = 0;
+    static Core::CVar* s_stop_sim = nullptr;
+
+    static Simplex simplex;
+    static CollisionInfo collision_info;
 
     State::Dyn& State::Dyn::set_pos(const glm::vec3& p) {
         this->pos = p;
@@ -41,14 +52,8 @@ namespace Physics {
         return *this;
     }
 
-    State& State::set_drag(float d) {
-        this->drag = d;
-        return *this;
-    }
-
-    State& State::set_mass(float m) {
-        this->mass = m;
-        this->inv_mass = 1.0f / m;
+    State& State::set_inv_mass(const float im) {
+        this->inv_mass = im;
         return *this;
     }
 
@@ -91,7 +96,7 @@ namespace Physics {
     }
 
 
-    ColliderId create_collider(
+    ColliderId create_rigidbody(
         ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation,
         const float mass, const ShapeType type
         ) {
@@ -102,9 +107,9 @@ namespace Physics {
             colliders_.transforms.emplace_back(mat);
             colliders_.aabbs.emplace_back(get_collider_meshes().simple[cm_id.index]);
             State s;
-            s.set_mass(mass).set_drag(0.99f).set_orig(orig);
+            s.set_inv_mass(1.0f / mass).set_orig(orig);
             s.set_inertia_tensor(
-                Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index])
+                Internal::create_inertia_tensor(type, mass, get_collider_meshes().complex[cm_id.index])
                 );
             s.dyn.set_pos(translation);
             s.dyn.set_rot(rotation);
@@ -115,9 +120,42 @@ namespace Physics {
             colliders_.transforms[id.index] = mat;
             colliders_.aabbs[id.index] = get_collider_meshes().simple[cm_id.index];
             auto& s = colliders_.states[id.index];
-            s.set_mass(mass).set_drag(0.99f).set_orig(orig);
+            s.set_inv_mass(1.0f / mass).set_orig(orig);
             s.set_inertia_tensor(
-                Internal::create_inertia_tensor(type, s.mass, get_collider_meshes().complex[cm_id.index])
+                Internal::create_inertia_tensor(type, mass, get_collider_meshes().complex[cm_id.index])
+                );
+            s.dyn.set_pos(translation);
+            s.dyn.set_rot(rotation);
+        }
+        return id;
+    }
+
+    ColliderId create_staticbody(
+        ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation
+        ) {
+        ColliderId id;
+        const auto mat = glm::translate(translation) * glm::mat4(rotation);
+        if (collider_id_pool.Allocate(id)) {
+            colliders_.meshes.emplace_back(cm_id);
+            colliders_.transforms.emplace_back(mat);
+            colliders_.aabbs.emplace_back(get_collider_meshes().simple[cm_id.index]);
+            State s;
+            s.set_inv_mass(0.0f).set_orig(orig);
+            s.set_inertia_tensor(
+                glm::mat3(0.0f)
+                );
+            s.dyn.set_pos(translation);
+            s.dyn.set_rot(rotation);
+            colliders_.states.emplace_back(s);
+        }
+        else {
+            colliders_.meshes[id.index] = cm_id;
+            colliders_.transforms[id.index] = mat;
+            colliders_.aabbs[id.index] = get_collider_meshes().simple[cm_id.index];
+            auto& s = colliders_.states[id.index];
+            s.set_inv_mass(0.0f).set_orig(orig);
+            s.set_inertia_tensor(
+                glm::mat3(0.0f)
                 );
             s.dyn.set_pos(translation);
             s.dyn.set_rot(rotation);
@@ -128,6 +166,10 @@ namespace Physics {
     void set_transform(const ColliderId collider, const glm::mat4& t) {
         assert(collider_id_pool.IsValid(collider));
         colliders_.transforms[collider.index] = t;
+    }
+
+    void init_debug() {
+        s_stop_sim = Core::CVarCreate(Core::CVar_Int, "s_stop_sim", "0");
     }
 
     bool cast_ray(const Ray& ray, HitInfo& hit) {
@@ -201,23 +243,72 @@ namespace Physics {
             );
     }
 
+    static std::vector<AABBPair> aabb_collisions;
+
     void step(const float dt) {
-        for (std::size_t i = 0; i < colliders_.states.size(); ++i) {
-            auto& state = colliders_.states[i];
-            const auto rotm = glm::mat3_cast(state.dyn.rot);
-            const auto inv_inertia_tensor = rotm * state.inv_inertia_shape * glm::transpose(rotm);
+        if (Core::CVarReadInt(s_stop_sim) == 0) {
+            for (std::size_t i = 0; i < get_colliders().states.size(); ++i) {
+                add_center_impulse(ColliderId(i), gravity);
+            }
 
-            const auto impulse = state.dyn.impulse_accum * state.inv_mass;
-            state.dyn.vel += impulse;
-            state.dyn.pos += state.dyn.vel * dt;
+            sort_and_sweep(aabb_collisions);
 
-            state.dyn.angular_vel += glm::quat(0.0f, inv_inertia_tensor * state.dyn.torque_accum);
-            state.dyn.rot = glm::normalize(state.dyn.rot + 0.5f * state.dyn.angular_vel * state.dyn.rot * dt);
+            for (const auto& [a, b]: aabb_collisions) {
+                if (gjk(a, b, simplex)) {
+                    collision_info = epa(simplex, a, b);
+                    if (collision_info.has_collision) {
+                        collision_solver(collision_info, a, b);
+                        // Core::CVarWriteInt(s_stop_sim, 1);
+                        // return;
+                    }
+                }
+            }
 
-            state.dyn.impulse_accum = glm::vec3(0);
-            state.dyn.torque_accum = glm::vec3(0);
+            for (std::size_t i = 0; i < colliders_.states.size(); ++i) {
+                auto& state = colliders_.states[i];
+                const auto rotm = glm::mat3_cast(state.dyn.rot);
+                const auto inv_inertia_tensor = rotm * state.inv_inertia_shape * glm::transpose(rotm);
 
-            colliders_.transforms[i] = glm::translate(state.dyn.pos) * glm::mat4_cast(state.dyn.rot);
+                state.dyn.vel += state.dyn.impulse_accum * state.inv_mass;
+                state.dyn.pos += state.dyn.vel * dt;
+
+                state.dyn.angular_vel += inv_inertia_tensor * state.dyn.torque_accum;
+                state.dyn.rot = glm::normalize(state.dyn.rot + 0.5f * glm::quat(0.0f, state.dyn.angular_vel) * state.dyn.rot * dt);
+
+                state.dyn.impulse_accum = glm::vec3(0);
+                state.dyn.torque_accum = glm::vec3(0);
+
+                colliders_.transforms[i] = glm::translate(state.dyn.pos) * glm::mat4_cast(state.dyn.rot);
+            }
+
+            update_aabbs();
+        } else {
+            Debug::DrawSimplex(simplex);
+            Debug::DrawBox(
+                collision_info.contact_point,
+                glm::quat(),
+                0.1f,
+                glm::vec4(1.0f, 0.5f, 0.5f, 1.0f)
+            );
+            Debug::DrawBox(
+                collision_info.contact_point_a,
+                glm::quat(),
+                0.1f,
+                glm::vec4(1.0f, 0.1f, 0.5f, 1.0f)
+            );
+            Debug::DrawBox(
+                collision_info.contact_point_b,
+                glm::quat(),
+                0.1f,
+                glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)
+            );
+            const auto dir = 100.0f * collision_info.normal;
+            const auto& a_state = colliders_.states[collision_info.a_id.index];
+            const auto& b_state = colliders_.states[collision_info.b_id.index];
+            Debug::DrawRay(Ray{collision_info.contact_point_a, dir}, glm::vec4(1.0f, 0.1f, 0.5f, 1.0f));
+            Debug::DrawRay(Ray{a_state.dyn.pos, a_state.dyn.vel}, glm::vec4(1.0f));
+            Debug::DrawRay(Ray{collision_info.contact_point_b, -dir}, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f));
+            Debug::DrawRay(Ray{b_state.dyn.pos, b_state.dyn.vel}, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
         }
     }
 
@@ -350,6 +441,8 @@ namespace Physics {
 
         CollisionInfo ret{};
 
+        auto premature{false};
+
         for (auto i = 0; i < max_iterations; ++i) {
             min_dist = glm::dot(faces[0].v0.point, faces[0].normal);
             min_face = 0;
@@ -365,7 +458,8 @@ namespace Physics {
             const auto s = support(a_id, b_id, dir);
 
             if (glm::dot(s.point, dir) - min_dist < epsilon_f) {
-                ret.normal = -faces[min_face].normal * glm::dot(s.point, dir);
+                ret.normal = glm::normalize(-faces[min_face].normal * glm::dot(s.point, dir));
+                premature = true;
                 break;
             }
 
@@ -426,7 +520,9 @@ namespace Physics {
             }
         }
 
-        ret.normal = -faces[min_face].normal * glm::dot(faces[min_face].v0.point, faces[min_face].normal);
+        if (!premature) {
+            ret.normal = glm::normalize(-faces[min_face].normal * glm::dot(faces[min_face].v0.point, faces[min_face].normal));
+        }
         const auto& s0 = faces[min_face].v0;
         const auto& s1 = faces[min_face].v1;
         const auto& s2 = faces[min_face].v2;
@@ -462,6 +558,8 @@ namespace Physics {
         ret.contact_point = 0.5f * (ret.contact_point_a + ret.contact_point_b);
         ret.penetration_depth = min_dist;
         ret.has_collision = true;
+        ret.a_id = a_id;
+        ret.b_id = b_id;
 
         if (min_dist == max_f) {
             std::cout << "aaaaaaaaaa\n";
@@ -470,8 +568,40 @@ namespace Physics {
         return ret;
     }
 
-    void collision_solver(const CollisionInfo& ci, ColliderId a_id, ColliderId b_id) {
+    void collision_solver(const CollisionInfo& collision_info, ColliderId a_id, ColliderId b_id) {
+        constexpr auto rest = 0.6f;
+        auto& a_state = colliders_.states[a_id.index];
+        auto& b_state = colliders_.states[b_id.index];
+        const auto& a_t = colliders_.transforms[a_id.index];
+        const auto& b_t = colliders_.transforms[b_id.index];
 
+        const auto a_r = collision_info.contact_point_a - glm::vec3(a_t * glm::vec4(a_state.orig, 1.0f));
+        const auto b_r = collision_info.contact_point_b - glm::vec3(b_t * glm::vec4(b_state.orig, 1.0f));
+
+        const auto a_vel = a_state.dyn.vel + glm::cross(a_state.dyn.angular_vel, a_r);
+        const auto b_vel = b_state.dyn.vel + glm::cross(b_state.dyn.angular_vel, b_r);
+
+        const auto tnorm = -collision_info.normal;
+        const auto rel_vel = glm::dot(tnorm, (a_vel - b_vel));
+        if (rel_vel > epsilon_f) return;
+
+        const auto a_rotm = glm::mat3_cast(a_state.dyn.rot);
+        const auto b_rotm = glm::mat3_cast(b_state.dyn.rot);
+        const auto a_inv_inertia = a_rotm * a_state.inv_inertia_shape * glm::transpose(a_rotm);
+        const auto b_inv_inertia = b_rotm * b_state.inv_inertia_shape * glm::transpose(b_rotm);
+        const auto a_rn = glm::cross(a_r, tnorm);
+        const auto b_rn = glm::cross(b_r, tnorm);
+        const auto a_term = a_state.inv_mass + glm::dot(a_rn, a_inv_inertia * a_rn);
+        const auto b_term = b_state.inv_mass + glm::dot(b_rn, b_inv_inertia * b_rn);
+        const auto a_j = ((-1.0f + rest) * rel_vel + collision_info.penetration_depth) / (a_term + b_term);
+        const auto b_j = -a_j;
+
+        const auto a_impulse = a_j * tnorm;
+        a_state.dyn.impulse_accum += a_impulse;
+        a_state.dyn.torque_accum += glm::cross(a_impulse, a_r);
+        const auto b_impulse = b_j * tnorm;
+        b_state.dyn.impulse_accum += b_impulse;
+        b_state.dyn.torque_accum += glm::cross(b_impulse, b_r);
     }
 
 

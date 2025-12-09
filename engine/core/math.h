@@ -43,4 +43,10 @@ namespace Math {
         return glm::dot(a, b) > Physics::epsilon_f;
     }
 
+    inline glm::quat add_scaled_vec(const glm::quat& a, const glm::quat& b) {
+        auto q = glm::quat(0.0f, b.x * b.w, b.y * b.w, b.z * b.w);
+        q *= a;
+        return a + 0.5f * q;
+    }
+
 }

@@ -75,6 +75,7 @@ namespace Physics {
         glm::vec3 normal{0};
         float penetration_depth{0.0f};
         bool has_collision{false};
+        ColliderId a_id, b_id;
     };
 
     struct SupportPoint {
