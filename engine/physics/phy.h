@@ -31,10 +31,12 @@ namespace Physics {
         glm::mat3 inv_inertia_shape = glm::mat3(0);
         glm::vec3 orig = glm::vec3(0);
         float inv_mass = 1.0f;
+        float scale = 1.0f;
 
         State& set_inertia_tensor(const glm::mat3& m);
         State& set_orig(const glm::vec3& o);
         State& set_inv_mass(float im);
+        State& set_scale(float s);
     };
 
     struct AABB;
@@ -53,10 +55,11 @@ namespace Physics {
 
     ColliderId create_rigidbody(
         ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation,
-        float mass = 1.0f, ShapeType type = ShapeType::Box
+        float scale = 1.0f, float mass = 1.0f, ShapeType type = ShapeType::Box
         );
     ColliderId create_staticbody(
-        ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation
+        ColliderMeshId cm_id, const glm::vec3& orig, const glm::vec3& translation, const glm::quat& rotation,
+        float scale = 1.0f
         );
     void set_transform(ColliderId collider, const glm::mat4& t);
 
