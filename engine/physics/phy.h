@@ -48,7 +48,7 @@ namespace Physics {
         std::vector<State> states;
     };
 
-    constexpr auto gravity = glm::vec3(0, -0.00981f, 0);
+    constexpr auto gravity = glm::vec3(0, -0.981f, 0);
 
     const Colliders& get_colliders();
     Colliders& colliders();
@@ -80,7 +80,8 @@ namespace Physics {
     void sort_and_sweep(std::vector<AABBPair>& aabb_pairs);
 
     bool gjk(ColliderId a_id, ColliderId b_id, Simplex& out_simplex);
-    CollisionInfo epa(const Simplex& simplex, ColliderId a_id, ColliderId b_id);
-    void collision_solver(const CollisionInfo& ci, ColliderId a_id, ColliderId b_id);
+    // CollisionInfo epa(const Simplex& simplex, ColliderId a_id, ColliderId b_id);
+    CollisionInfo epa2(const Simplex& simplex, ColliderId a_id, ColliderId b_id);
+    void collision_solver(const CollisionInfo& collision_info, ColliderId a_id, ColliderId b_id, float dt);
 
 } // namespace Physics

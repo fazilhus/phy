@@ -16,8 +16,8 @@ namespace Physics {
 
         void add_point(const SupportPoint& point);
 
-        const SupportPoint& operator[](int i) const { return this->m_points[i]; }
-        SupportPoint& operator[](int i) { return this->m_points[i]; }
+        const SupportPoint& operator[](const int i) const { return this->m_points[i]; }
+        SupportPoint& operator[](const int i) { return this->m_points[i]; }
         [[nodiscard]] std::size_t size() const { return this->m_size; }
 
         [[nodiscard]] auto begin() const { return this->m_points.begin(); }

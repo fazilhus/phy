@@ -4,6 +4,10 @@
 
 namespace Physics {
 
+    constexpr auto epsilon_f = std::numeric_limits<float>::epsilon();
+    constexpr auto max_f = std::numeric_limits<float>::max();
+    constexpr auto inf_f = std::numeric_limits<float>::infinity();
+
     struct ColliderId {
         uint32_t index: 22; // 4M concurrent colliders
         uint32_t generation: 10; // 1024 generations per index
@@ -59,14 +63,14 @@ namespace Physics {
         glm::vec3 local_norm = glm::vec3(0);
         glm::vec3 pos = glm::vec3(0);
         glm::vec3 norm = glm::vec3(0);
-        float t = FLT_MAX;
+        float t = max_f;
         ColliderId collider = ColliderId::Invalid();
         ColliderMeshId mesh = ColliderMeshId::Invalid();
         std::size_t prim_n;
         std::size_t tri_n;
 
         [[nodiscard]] bool hit() const {
-            return t < FLT_MAX;
+            return t < max_f;
         }
     };
 
@@ -81,9 +85,5 @@ namespace Physics {
     struct SupportPoint {
         glm::vec3 point, a, b;
     };
-
-    constexpr auto epsilon_f = std::numeric_limits<float>::epsilon();
-    constexpr auto max_f = std::numeric_limits<float>::max();
-    constexpr auto inf_f = std::numeric_limits<float>::infinity();
 
 } // namespace Physics

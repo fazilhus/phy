@@ -40,7 +40,7 @@ namespace Math {
     }
 
     inline bool same_dir(const glm::vec3& a, const glm::vec3& b) {
-        return glm::dot(a, b) > Physics::epsilon_f;
+        return glm::dot(a, b) > 0.0f;
     }
 
     inline glm::quat add_scaled_vec(const glm::quat& a, const glm::quat& b) {

@@ -78,7 +78,6 @@ namespace Physics {
                         );
                 mesh->vertices.emplace_back(vertex);
                 mesh->center += vertex;
-                // std::cout << *it << ' ' << vertex << '\n';
             }
 
             aabb->grow(glm::vec3(vb_access.min[0], vb_access.min[1], vb_access.min[2]));
@@ -143,7 +142,7 @@ namespace Physics {
 
     glm::vec3 ColliderMesh::furthest_along(const glm::mat4& t, const glm::vec3& dir) const {
         glm::vec3 best_point{};
-        float best_dist{-FLT_MAX};
+        float best_dist{-max_f};
         for (const auto& v : this->vertices) {
             const auto point = glm::vec3(t * glm::vec4(v, 1.0f));
             const auto dist = glm::dot(point, dir);
@@ -165,7 +164,6 @@ namespace Physics {
     }
 
     void AABB::grow_rot(const glm::mat4& t) {
-        // const auto tt = glm::transpose(t);
         const auto xa = t[0] * this->min_bound.x;
         const auto xb = t[0] * this->max_bound.x;
         const auto ya = t[1] * this->min_bound.y;
@@ -177,7 +175,7 @@ namespace Physics {
     }
 
     bool AABB::intersect(const Ray& r, HitInfo& hit) const {
-        auto tmin{0.0f}, tmax{FLT_MAX};
+        auto tmin{0.0f}, tmax{max_f};
 
         for (auto i = 0; i < 3; ++i) {
             const auto t1 = (this->min_bound[i] - r.orig[i]) * r.inv_dir[i];

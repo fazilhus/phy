@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "physicsresource.h"
 #include "vec3.hpp"
 
 
@@ -51,7 +52,7 @@ namespace Physics {
             };
         };
 
-        explicit AABB() : min_bound(FLT_MAX), max_bound(-FLT_MAX) {}
+        explicit AABB() : min_bound(max_f), max_bound(-max_f) {}
 
         void grow(const glm::vec3& p);
         void grow_rot(const glm::mat4& t);
