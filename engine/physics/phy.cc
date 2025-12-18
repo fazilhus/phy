@@ -201,7 +201,7 @@ namespace Physics {
         HitInfo best_hit;
         for (const auto it: aabb_hits) {
             auto& cm = get_collider_meshes().complex[it.mesh.index];
-            const auto t = colliders_.transforms[it.collider.index];
+            const auto& t = colliders_.transforms[it.collider.index];
             const auto inv_t = glm::inverse(t);
             const auto model_ray = Ray(
                 inv_t * glm::vec4(ray.orig, 1.0f), Math::safe_normal(inv_t * glm::vec4(ray.dir, 0.0f))
@@ -279,7 +279,6 @@ namespace Physics {
         collisions_to_solve.clear();
         for (const auto& [a, b]: aabb_collisions) {
             if (gjk(a, b, saved_simplex)) {
-                Debug::DrawSimplex(saved_simplex);
                 if (const auto ci = epa2(saved_simplex, a, b);
                     ci.has_collision) {
                     collisions_to_solve.push_back(ci);
@@ -290,31 +289,6 @@ namespace Physics {
 
         for (const auto& ci : collisions_to_solve) {
             collision_solver(ci, ci.a_id, ci.b_id, dt);
-            // Debug::DrawBox(
-            //     ci.contact_point,
-            //     glm::quat(),
-            //     0.1f,
-            //     glm::vec4(1.0f, 0.5f, 0.5f, 1.0f)
-            //     );
-            // Debug::DrawBox(
-            //     ci.contact_point_a,
-            //     glm::quat(),
-            //     0.1f,
-            //     glm::vec4(1.0f, 0.1f, 0.5f, 1.0f)
-            //     );
-            // Debug::DrawBox(
-            //     ci.contact_point_b,
-            //     glm::quat(),
-            //     0.1f,
-            //     glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)
-            //     );
-            // const auto dir = 100.0f * ci.normal;
-            // const auto& a_state = colliders_.states[ci.a_id.index];
-            // const auto& b_state = colliders_.states[ci.b_id.index];
-            // Debug::DrawRay(Ray{ci.contact_point_a, dir}, glm::vec4(1.0f, 0.1f, 0.5f, 1.0f));
-            // Debug::DrawRay(Ray{a_state.dyn.pos, a_state.dyn.vel}, glm::vec4(1.0f));
-            // Debug::DrawRay(Ray{ci.contact_point_b, -dir}, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f));
-            // Debug::DrawRay(Ray{b_state.dyn.pos, b_state.dyn.vel}, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
         }
     }
 
