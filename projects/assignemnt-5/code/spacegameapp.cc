@@ -38,7 +38,7 @@ namespace Game {
     //------------------------------------------------------------------------------
     /**
     */
-    SpaceGameApp::SpaceGameApp() : dt(1.0f / 60.0f) {
+    SpaceGameApp::SpaceGameApp() {
         // empty
     }
 
@@ -107,12 +107,12 @@ namespace Game {
             std::get<0>(cube) = cubemesh;
             constexpr auto span = 10.0f;
             const auto translation = glm::vec3(
-                Core::RandomFloatNTP() * span,
-                Core::RandomFloat() * 2.0f + 1.0f,
-                Core::RandomFloatNTP() * span
+                0.0f,//Core::RandomFloatNTP() * span,
+                Core::RandomFloat() + 4.0f,
+                0.0f//Core::RandomFloatNTP() * span
                 );
             const auto rotationAxis = normalize(translation);
-            const auto rotation = glm::quat(translation.x, rotationAxis);
+            const auto rotation = glm::quat(/*translation.x, rotationAxis*/);
             std::get<1>(cube) = Physics::create_rigidbody(
                 cubecmesh,
                 Physics::get_collider_meshes().complex[cubecmesh.index].center,
@@ -126,13 +126,13 @@ namespace Game {
         {
             std::tuple<ModelId, Physics::ColliderId> cube;
             std::get<0>(cube) = cubemesh;
-            constexpr auto translation = glm::vec3(0.0f, -101.0f, 0.0f);
+            constexpr auto translation = glm::vec3(0.0f, -10.0f, 0.0f);
             std::get<1>(cube) = Physics::create_staticbody(
                 cubecmesh,
                 Physics::get_collider_meshes().complex[cubecmesh.index].center,
                 translation,
                 glm::quat(),
-                100.0f
+                10.0f
                 );
             cubes.emplace_back(cube);
         }
@@ -172,10 +172,9 @@ namespace Game {
                 );
         }
 
-        std::clock_t c_start = std::clock();
-
         Physics::Ray r(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
         Physics::HitInfo hit;
+        auto dt = 1.0f / 60.0f;
 
         // game loop
         while (this->window->IsOpen()) {
@@ -199,7 +198,7 @@ namespace Game {
                     Core::CVarWriteInt(aabb, 1);
                     Core::CVarWriteInt(aabb_id, hit.collider.index);
                     Core::CVarWriteInt(cm_id, hit.collider.index);
-                    Physics::add_impulse(hit.collider, hit.pos, 0.01f * r.dir);
+                    Physics::add_impulse(hit.collider, hit.pos, 1.0f * r.dir);
                 }
                 else {
                     Core::CVarWriteInt(aabb, 0);
@@ -226,19 +225,19 @@ namespace Game {
             }
 
             Debug::DrawGrid();
-            Debug::DrawSelectedAABB();
+            // Debug::DrawSelectedAABB();
             Debug::DrawSelectedCMesh();
-            // Debug::DrawAABBs();
+            Debug::DrawAABBs();
             // Debug::DrawCMeshes();
 
             // Execute the entire rendering pipeline
-            RenderDevice::Render(this->window, this->dt);
+            RenderDevice::Render(this->window, dt);
 
             // transfer new frame to window
             this->window->SwapBuffers();
 
             auto timeEnd = std::chrono::steady_clock::now();
-            this->dt = std::min(0.04f, std::chrono::duration<float>(timeEnd - timeStart).count());
+            dt = std::chrono::duration<float>(timeEnd - timeStart).count();
 
             if (kbd->pressed[Input::Key::Code::Escape])
                 this->Exit();
@@ -259,8 +258,6 @@ namespace Game {
 
             // bool show = true;
             // ImGui::ShowDemoWindow(&show);
-
-            ImGui::Text(("dt: " + std::to_string(1.0f / this->dt)).c_str());
 
             ImGui::Text("Debug Camera");
             ImGui::InputFloat3("Pos", &camera->pos[0]);

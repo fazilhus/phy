@@ -202,7 +202,7 @@ namespace Physics {
         for (const auto it: aabb_hits) {
             auto& cm = get_collider_meshes().complex[it.mesh.index];
             const auto& t = colliders_.transforms[it.collider.index];
-            const auto inv_t = glm::inverse(t);
+            const auto inv_t = glm::inverse(t * glm::scale(glm::vec3(1.0f / colliders_.states[it.collider.index].scale)));
             const auto model_ray = Ray(
                 inv_t * glm::vec4(ray.orig, 1.0f), Math::safe_normal(inv_t * glm::vec4(ray.dir, 0.0f))
                 );

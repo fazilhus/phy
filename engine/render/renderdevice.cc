@@ -564,7 +564,7 @@ namespace Render {
     //------------------------------------------------------------------------------
     /**
 */
-    void RenderDevice::Render(Display::Window* wnd, float dt) {
+    void RenderDevice::Render(Display::Window* wnd, const float dt) {
         TextureResource::PollPendingTextureLoads();
 
         wnd->MakeCurrent();
