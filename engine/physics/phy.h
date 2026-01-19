@@ -48,7 +48,7 @@ namespace Physics {
         std::vector<State> states;
     };
 
-    constexpr auto gravity = glm::vec3(0, -0.981f, 0);
+    constexpr auto gravity = glm::vec3(0, -9.81f, 0);
 
     const Colliders& get_colliders();
     Colliders& colliders();

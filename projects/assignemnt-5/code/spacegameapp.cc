@@ -38,7 +38,7 @@ namespace Game {
     //------------------------------------------------------------------------------
     /**
     */
-    SpaceGameApp::SpaceGameApp() {
+    SpaceGameApp::SpaceGameApp() : deltaTime(1.0f / 60.0f) {
         // empty
     }
 
@@ -88,12 +88,12 @@ namespace Game {
         Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
         cam->projection = projection;
 
-        auto cam_pos = glm::vec3(0, 0, 0);
+        auto cam_pos = glm::vec3(0, 1.0f, -5.0f);
         auto t = glm::mat4(1.0f);
         cam->view = lookAt(cam_pos, cam_pos + glm::vec3(t[2]), glm::vec3(t[1]));
 
         camera = new Render::DebugCamera(5.0f, 1.5f);
-        // camera->pos = glm::vec3(0.0f, 1.5f, -5.0f);
+        camera->pos = cam_pos;
 
         Physics::init_debug();
 
@@ -174,7 +174,7 @@ namespace Game {
 
         Physics::Ray r(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
         Physics::HitInfo hit;
-        auto dt = 1.0f / 60.0f;
+        // auto dt = 1.0f / 60.0f;
 
         // game loop
         while (this->window->IsOpen()) {
@@ -185,7 +185,7 @@ namespace Game {
             glCullFace(GL_BACK);
 
             this->window->Update();
-            this->camera->Update(dt);
+            this->camera->Update(this->deltaTime);
 
             if (kbd->pressed[Input::Key::Code::End]) { ShaderResource::ReloadShaders(); }
 
@@ -217,7 +217,7 @@ namespace Game {
                     );
             }
 
-            Physics::step(dt);
+            Physics::step(this->deltaTime);
 
             // Store all drawcalls in the render device
             for (auto& [model, collider] : cubes) {
@@ -231,13 +231,13 @@ namespace Game {
             // Debug::DrawCMeshes();
 
             // Execute the entire rendering pipeline
-            RenderDevice::Render(this->window, dt);
+            RenderDevice::Render(this->window, this->deltaTime);
 
             // transfer new frame to window
             this->window->SwapBuffers();
 
             auto timeEnd = std::chrono::steady_clock::now();
-            dt = std::chrono::duration<float>(timeEnd - timeStart).count();
+            this->deltaTime = Math::min(0.04f, std::chrono::duration<float>(timeEnd - timeStart).count());
 
             if (kbd->pressed[Input::Key::Code::Escape])
                 this->Exit();
@@ -256,8 +256,7 @@ namespace Game {
         if (this->window->IsOpen()) {
             ImGui::Begin("Debug");
 
-            // bool show = true;
-            // ImGui::ShowDemoWindow(&show);
+            ImGui::Text(std::to_string(this->deltaTime).c_str());
 
             ImGui::Text("Debug Camera");
             ImGui::InputFloat3("Pos", &camera->pos[0]);

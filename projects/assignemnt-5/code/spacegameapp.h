@@ -32,5 +32,6 @@ namespace Game {
 
         Display::Window* window;
         Render::DebugCamera* camera;
+        float deltaTime;
     };
 } // namespace Game

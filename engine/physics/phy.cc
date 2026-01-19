@@ -250,8 +250,15 @@ namespace Physics {
 
     static std::vector<AABBPair> aabb_collisions;
     static std::vector<CollisionInfo> collisions_to_solve;
+    static float time_acc = 0.0f;
+    static float physics_step_timer = 1.0f / 60.0f;
 
     void step(const float dt) {
+        time_acc += dt;
+        if (time_acc < physics_step_timer) {
+            return;
+        }
+        time_acc = 0.0f;
         for (std::size_t i = 0; i < colliders_.states.size(); ++i) {
             auto& state = colliders_.states[i];
             const auto rotm = glm::mat3_cast(state.dyn.rot);
